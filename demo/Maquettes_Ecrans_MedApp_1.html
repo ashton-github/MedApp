@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MedApp — Maquettes des écrans</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --surface-2: #ffffff;
+    --surface-1: #f5f5f4;
+    --border: #e6e5e0;
+    --border-strong: #c9c8c1;
+    --border-accent: #378ADD;
+    --text-primary: #1a1a1a;
+    --text-secondary: #5f5e5a;
+    --text-muted: #928f88;
+    --text-accent: #185FA5;
+    --bg-accent: #E6F1FB;
+    --fill-accent: #378ADD;
+    --on-accent: #ffffff;
+    --bg-success: #EAF3DE;
+    --text-success: #3B6D11;
+    --radius: 8px;
+    --font-mono: 'SFMono-Regular', Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #eef0f2;
+    color: var(--text-primary);
+    margin: 0;
+    padding: 40px 16px;
+  }
+  .page-wrap { max-width: 760px; margin: 0 auto; }
+  .page-title { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+  input, select, textarea, button {
+    font-family: inherit;
+    font-size: 13px;
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    background: var(--surface-2);
+    color: var(--text-primary);
+  }
+  button { cursor: pointer; background: var(--surface-2); }
+  button:hover { background: var(--surface-1); }
+  button:active { transform: scale(0.98); }
+  .screen-btn { font-size: 13px; padding: 7px 14px; background: #fff; border: 0.5px solid var(--border-strong); border-radius: var(--radius); cursor: pointer; color: var(--text-primary); }
+  .screen-btn.active { border: 2px solid var(--border-accent); color: var(--text-accent); }
+  .nav-item.active { background: var(--bg-accent); color: var(--text-accent); }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: var(--radius); font-weight: 500; }
+  .badge-success { background: var(--bg-success); color: var(--text-success); }
+  .badge-muted { background: var(--surface-1); color: var(--text-muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  td { padding: 10px 4px; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <div class="page-title">MedApp — Maquettes des écrans</div>
+  <div class="page-sub">Prototype cliquable des 5 écrans principaux — cliquer sur les boutons pour naviguer.</div>
+
+  <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+    <button class="screen-btn" data-screen="login">Connexion</button>
+    <button class="screen-btn" data-screen="patients">Liste des patients</button>
+    <button class="screen-btn" data-screen="patient-form">Fiche patient</button>
+    <button class="screen-btn" data-screen="ordonnances">Liste des ordonnances</button>
+    <button class="screen-btn" data-screen="ordonnance-form">Nouvelle ordonnance</button>
+  </div>
+
+  <div style="border: 0.5px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--surface-2); box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+    <div style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 0.5px solid var(--border); background: var(--surface-1);">
+      <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--border-strong);"></span>
+      <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--border-strong);"></span>
+      <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--border-strong);"></span>
+      <span id="addr" style="margin-left: 10px; font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);">localhost:5173/login</span>
+    </div>
+
+    <div id="shell" style="display: flex; min-height: 460px;">
+      <div id="sidebar" style="display: none; width: 150px; border-right: 0.5px solid var(--border); padding: 1rem 0.75rem; flex-shrink: 0;">
+        <div style="font-size: 15px; font-weight: 600; margin-bottom: 1.5rem; padding: 0 4px;">MedApp</div>
+        <div class="nav-item" data-nav="patients" style="display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: var(--radius); font-size: 13px; margin-bottom: 4px;"><i class="ti ti-users" style="font-size:16px;"></i>Patients</div>
+        <div class="nav-item" data-nav="ordonnances" style="display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: var(--radius); font-size: 13px; margin-bottom: 4px;"><i class="ti ti-file-text" style="font-size:16px;"></i>Ordonnances</div>
+        <div style="border-top: 0.5px solid var(--border); margin: 12px 0;"></div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: var(--radius); font-size: 13px; color: var(--text-muted);"><i class="ti ti-logout" style="font-size:16px;"></i>Deconnexion</div>
+      </div>
+
+      <div id="content" style="flex: 1; padding: 1.5rem;">
+
+        <div class="screen" id="screen-login" style="display: flex; align-items: center; justify-content: center; min-height: 420px;">
+          <div style="width: 280px; border: 0.5px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+            <div style="text-align: center; margin-bottom: 1.25rem;">
+              <div style="font-size: 18px; font-weight: 600;">MedApp</div>
+              <div style="font-size: 13px; color: var(--text-secondary);">Connexion a votre espace</div>
+            </div>
+            <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Email</label>
+            <input type="email" placeholder="nom@medapp.fr" style="width: 100%; margin-bottom: 12px;" />
+            <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Mot de passe</label>
+            <input type="password" placeholder="········" style="width: 100%; margin-bottom: 16px;" />
+            <button style="width: 100%; background: var(--fill-accent); color: var(--on-accent); border: none; padding: 10px;">Se connecter</button>
+            <div style="text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 12px;">Pas encore de compte ? Creer un compte</div>
+          </div>
+        </div>
+
+        <div class="screen" id="screen-patients" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 12px;">
+            <div style="font-size: 18px; font-weight: 600;">Patients</div>
+            <div style="display: flex; gap: 8px;">
+              <input placeholder="Rechercher un patient" style="width: 180px;" />
+              <button style="background: var(--fill-accent); color: var(--on-accent); border: none; white-space: nowrap;"><i class="ti ti-plus" style="font-size:14px; vertical-align:-2px;"></i> Nouveau patient</button>
+            </div>
+          </div>
+          <table>
+            <tr style="border-bottom: 0.5px solid var(--border);">
+              <td style="color: var(--text-secondary);">Nom</td>
+              <td style="color: var(--text-secondary);">Prenom</td>
+              <td style="color: var(--text-secondary);">Naissance</td>
+              <td style="color: var(--text-secondary); text-align: right;">Actions</td>
+            </tr>
+            <tr style="border-bottom: 0.5px solid var(--border);"><td>Martin</td><td>Sophie</td><td>14/03/1985</td><td style="text-align: right;"><i class="ti ti-eye" style="font-size:16px; margin-right:10px;"></i><i class="ti ti-edit" style="font-size:16px;"></i></td></tr>
+            <tr style="border-bottom: 0.5px solid var(--border);"><td>Dubois</td><td>Karim</td><td>02/11/1990</td><td style="text-align: right;"><i class="ti ti-eye" style="font-size:16px; margin-right:10px;"></i><i class="ti ti-edit" style="font-size:16px;"></i></td></tr>
+            <tr style="border-bottom: 0.5px solid var(--border);"><td>Leroy</td><td>Alice</td><td>27/07/1978</td><td style="text-align: right;"><i class="ti ti-eye" style="font-size:16px; margin-right:10px;"></i><i class="ti ti-edit" style="font-size:16px;"></i></td></tr>
+          </table>
+        </div>
+
+        <div class="screen" id="screen-patient-form" style="display: none;">
+          <div style="font-size: 18px; font-weight: 600; margin-bottom: 1rem;">Fiche patient — Sophie Martin</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div><label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Nom</label><input value="Martin" style="width: 100%;" /></div>
+            <div><label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Prenom</label><input value="Sophie" style="width: 100%;" /></div>
+            <div><label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Date de naissance</label><input value="14/03/1985" style="width: 100%;" /></div>
+            <div><label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Telephone</label><input value="06 12 34 56 78" style="width: 100%;" /></div>
+          </div>
+          <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Adresse</label>
+          <input value="12 rue des Lilas, 75011 Paris" style="width: 100%; margin-bottom: 12px;" />
+          <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Antecedents</label>
+          <textarea rows="2" style="width: 100%; margin-bottom: 16px; resize: vertical;">Allergie a la penicilline</textarea>
+          <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+            <button style="background: var(--fill-accent); color: var(--on-accent); border: none;">Enregistrer</button>
+            <button>Annuler</button>
+          </div>
+          <div style="border-top: 0.5px solid var(--border); padding-top: 12px;">
+            <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Historique des ordonnances</div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 0.5px solid var(--border);"><span>12/06/2026</span><span class="badge badge-success">Active</span></div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0;"><span>03/01/2026</span><span class="badge badge-muted">Expiree</span></div>
+          </div>
+        </div>
+
+        <div class="screen" id="screen-ordonnances" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 12px;">
+            <div style="font-size: 18px; font-weight: 600;">Ordonnances</div>
+            <button style="background: var(--fill-accent); color: var(--on-accent); border: none; white-space: nowrap;"><i class="ti ti-plus" style="font-size:14px; vertical-align:-2px;"></i> Nouvelle ordonnance</button>
+          </div>
+          <table>
+            <tr style="border-bottom: 0.5px solid var(--border);">
+              <td style="color: var(--text-secondary);">Patient</td>
+              <td style="color: var(--text-secondary);">Emission</td>
+              <td style="color: var(--text-secondary);">Validite</td>
+              <td style="color: var(--text-secondary);">Statut</td>
+            </tr>
+            <tr style="border-bottom: 0.5px solid var(--border);"><td>Sophie Martin</td><td>12/06/2026</td><td>12/07/2026</td><td><span class="badge badge-success">Active</span></td></tr>
+            <tr style="border-bottom: 0.5px solid var(--border);"><td>Karim Dubois</td><td>01/05/2026</td><td>01/06/2026</td><td><span class="badge badge-muted">Expiree</span></td></tr>
+            <tr style="border-bottom: 0.5px solid var(--border);"><td>Alice Leroy</td><td>28/06/2026</td><td>28/07/2026</td><td><span class="badge badge-success">Active</span></td></tr>
+          </table>
+        </div>
+
+        <div class="screen" id="screen-ordonnance-form" style="display: none;">
+          <div style="font-size: 18px; font-weight: 600; margin-bottom: 1rem;">Nouvelle ordonnance</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; min-width: 0;">
+            <div style="min-width: 0;"><label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Patient</label><select style="width: 100%;"><option>Sophie Martin</option></select></div>
+            <div style="min-width: 0;"><label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Date de validite</label><input type="date" style="width: 100%; min-width: 0;" /></div>
+          </div>
+          <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Medicaments</div>
+          <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <input placeholder="Nom du medicament" style="width: 100%; min-width: 0;" />
+            <input placeholder="Dosage" style="width: 100%; min-width: 0;" />
+            <input placeholder="Frequence" style="width: 100%; min-width: 0;" />
+            <input placeholder="Duree" style="width: 100%; min-width: 0;" />
+          </div>
+          <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+            <input placeholder="Nom du medicament" style="width: 100%; min-width: 0;" />
+            <input placeholder="Dosage" style="width: 100%; min-width: 0;" />
+            <input placeholder="Frequence" style="width: 100%; min-width: 0;" />
+            <input placeholder="Duree" style="width: 100%; min-width: 0;" />
+          </div>
+          <button style="margin-bottom: 16px;"><i class="ti ti-plus" style="font-size:14px; vertical-align:-2px;"></i> Ajouter un medicament</button>
+          <div>
+            <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Remarques</label>
+            <textarea rows="2" placeholder="Remarques complementaires" style="width: 100%; margin-bottom: 16px; resize: vertical;"></textarea>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button style="background: var(--fill-accent); color: var(--on-accent); border: none;">Enregistrer l'ordonnance</button>
+            <button>Annuler</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 16px;">
+    Maquette fonctionnelle — ouvrir ce fichier dans un navigateur pour naviguer entre les écrans.
+  </div>
+
+</div>
+
+<script>
+var addrMap = {
+  login: 'localhost:5173/login',
+  patients: 'localhost:5173/patients',
+  'patient-form': 'localhost:5173/patients/1',
+  ordonnances: 'localhost:5173/ordonnances',
+  'ordonnance-form': 'localhost:5173/ordonnances/nouvelle'
+};
+var navMap = { patients: 'patients', 'patient-form': 'patients', ordonnances: 'ordonnances', 'ordonnance-form': 'ordonnances' };
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(function(el) { el.style.display = 'none'; });
+  document.getElementById('screen-' + name).style.display = name === 'login' ? 'flex' : 'block';
+  document.getElementById('addr').textContent = addrMap[name];
+  document.getElementById('sidebar').style.display = name === 'login' ? 'none' : 'block';
+  document.querySelectorAll('.nav-item').forEach(function(el) { el.classList.remove('active'); });
+  if (navMap[name]) {
+    var navEl = document.querySelector('.nav-item[data-nav="' + navMap[name] + '"]');
+    if (navEl) navEl.classList.add('active');
+  }
+  document.querySelectorAll('.screen-btn').forEach(function(el) {
+    el.classList.toggle('active', el.getAttribute('data-screen') === name);
+  });
+}
+
+document.querySelectorAll('.screen-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() { showScreen(btn.getAttribute('data-screen')); });
+});
+
+showScreen('login');
+</script>
+</body>
+</html>
