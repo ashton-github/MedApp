@@ -1,66 +1,80 @@
-import { reactive, ref } from 'vue'
+import { ref } from 'vue'
 import { screens } from '../constants/medapp.js'
 
 const currentScreen = ref(screens.login)
+const authUser = ref(null)
 
-const authForm = reactive({
+const authForm = ref({
   email: '',
   password: ''
 })
 
-const patientDraft = reactive({
-  nom: 'Martin',
-  prenom: 'Sophie',
-  naissance: '14/03/1985',
-  telephone: '06 12 34 56 78',
-  adresse: '12 rue des Lilas, 75011 Paris',
-  antecedents: 'Allergie a la penicilline'
+const patientDraft = ref({
+  nom: '',
+  prenom: '',
+  naissance: '',
+  telephone: '',
+  adresse: '',
+  antecedents: '',
+  mutuelle: ''
 })
 
-const prescriptionDraft = reactive({
-  patient: 'Sophie Martin',
+const prescriptionDraft = ref({
+  patient: '',
   validite: '',
-  medicament1: 'Amoxicilline',
-  dosage1: '500 mg',
-  frequence1: '2 fois / jour',
-  duree1: '7 jours',
-  medicament2: 'Paracetamol',
-  dosage2: '500 mg',
-  frequence2: 'Si douleur',
-  duree2: '3 jours',
-  remarques: 'Prendre pendant le repas si possible'
+  medicament1: '',
+  dosage1: '',
+  frequence1: '',
+  duree1: '',
+  medicament2: '',
+  dosage2: '',
+  frequence2: '',
+  duree2: '',
+  remarques: ''
 })
-
-function showScreen(name) {
-  currentScreen.value = name
-}
-
-function signIn() {
-  showScreen(screens.patients)
-}
-
-function openNewPatient() {
-  showScreen(screens.patientForm)
-}
-
-function openNewOrdonnance() {
-  showScreen(screens.ordonnanceForm)
-}
-
-function editPatient() {
-  showScreen(screens.patientForm)
-}
 
 export function useMedAppState() {
+  const showScreen = (screen) => {
+    currentScreen.value = screen
+  }
+
+  const signIn = (user = null) => {
+    if (user) {
+      authUser.value = user
+    }
+    showScreen(screens.dashboard)
+  }
+
+  const logout = () => {
+    authUser.value = null
+    showScreen(screens.login)
+  }
+
+  const editPatient = () => {
+    showScreen(screens.patientForm)
+  }
+
+  const openNewPatient = () => {
+    patientDraft.value = { nom: '', prenom: '', naissance: '', telephone: '', adresse: '', antecedents: '', mutuelle: '' }
+    showScreen(screens.patientForm)
+  }
+
+  const openNewOrdonnance = () => {
+    prescriptionDraft.value = { patient: '', validite: '', medicament1: '', dosage1: '', frequence1: '', duree1: '', medicament2: '', dosage2: '', frequence2: '', duree2: '', remarques: '' }
+    showScreen(screens.ordonnanceForm)
+  }
+
   return {
     currentScreen,
+    authUser,
     authForm,
     patientDraft,
     prescriptionDraft,
     showScreen,
     signIn,
+    logout,
+    editPatient,
     openNewPatient,
-    openNewOrdonnance,
-    editPatient
+    openNewOrdonnance
   }
 }

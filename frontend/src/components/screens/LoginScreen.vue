@@ -1,26 +1,228 @@
 <script setup>
+import { ref } from 'vue'
+import {
+  Stethoscope,
+  Heart,
+  CheckCircle2,
+  Users,
+  Mail,
+  Lock,
+  ArrowRight,
+  ClipboardList,
+  Shield,
+  Loader2
+} from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
+import { cn } from '../../lib/utils.js'
 
-const { authForm, signIn } = useMedAppState()
+const { signIn } = useMedAppState()
+
+const role = ref('doctor')
+const email = ref('dr.martin@medapp.fr')
+const password = ref('')
+const loading = ref(false)
+const success = ref(false)
+const errs = ref({})
+
+const ROLES = [
+  { v: 'doctor', label: 'Médecin', icon: Stethoscope, demo: 'dr.martin@medapp.fr', name: 'Dr. Martin' },
+  { v: 'secretary', label: 'Secrétaire', icon: ClipboardList, demo: 'sec.dupont@medapp.fr', name: 'Marie Dupont' },
+  { v: 'admin', label: 'Admin', icon: Shield, demo: 'admin@medapp.fr', name: 'Admin Principal' }
+]
+
+const validate = () => {
+  const e = {}
+  if (!email.value) e.email = 'Email requis'
+  else if (!/\S+@\S+\.\S+/.test(email.value)) e.email = 'Email invalide'
+  if (!password.value) e.password = 'Mot de passe requis'
+  return e
+}
+
+const submit = (e) => {
+  e.preventDefault()
+  const e2 = validate()
+  if (Object.keys(e2).length) {
+    errs.value = e2
+    return
+  }
+  errs.value = {}
+  loading.value = true
+  setTimeout(() => {
+    loading.value = false
+    success.value = true
+    const r = ROLES.find(r => r.v === role.value)
+    setTimeout(() => {
+      signIn({ name: r.name, role: r.v, email: r.demo })
+    }, 1200)
+  }, 1400)
+}
 </script>
 
 <template>
-  <section class="screen login-screen">
-    <div class="login-card">
-      <div class="login-header">
-        <h2>MedApp</h2>
-        <p>Connexion a votre espace</p>
+  <div class="min-h-screen flex bg-background w-full">
+    <!-- Left panel -->
+    <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 relative overflow-hidden flex-col justify-between p-12">
+      <div class="absolute inset-0 opacity-10">
+        <div v-for="i in 5" :key="i" class="absolute rounded-full border border-white"
+          :style="{ width: `${180 + (i-1) * 90}px`, height: `${180 + (i-1) * 90}px`, top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }">
+        </div>
       </div>
-
-      <label>Email</label>
-      <input v-model="authForm.email" type="email" placeholder="nom@medapp.fr" />
-
-      <label>Mot de passe</label>
-      <input v-model="authForm.password" type="password" placeholder="········" />
-
-      <button class="primary" type="button" @click="signIn">Se connecter</button>
-
-      <p class="helper">Pas encore de compte ? Creer un compte</p>
+      <div class="relative z-10 flex items-center gap-3">
+        <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+          <Stethoscope class="w-5 h-5 text-white" />
+        </div>
+        <span class="text-white font-bold text-xl tracking-tight">MedApp</span>
+      </div>
+      
+      <div class="relative z-10 space-y-8">
+        <div class="flex justify-center">
+          <div class="relative">
+            <div class="w-48 h-48 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center border border-white/20 shadow-2xl">
+              <div class="text-center space-y-4">
+                <div class="w-16 h-16 bg-white/20 rounded-2xl mx-auto flex items-center justify-center">
+                  <Heart class="w-8 h-8 text-white" />
+                </div>
+                <div class="space-y-1.5">
+                  <div class="h-2 bg-white/40 rounded-full w-24 mx-auto"></div>
+                  <div class="h-2 bg-white/25 rounded-full w-16 mx-auto"></div>
+                  <div class="h-2 bg-white/15 rounded-full w-20 mx-auto"></div>
+                </div>
+              </div>
+            </div>
+            
+            <div v-motion :initial="{ y: -10 }" :enter="{ y: 0, transition: { repeat: Infinity, repeatType: 'mirror', duration: 2800 } }" class="absolute -top-4 -right-6 bg-white rounded-2xl px-3 py-2 shadow-xl">
+              <span class="text-xs font-semibold text-blue-700 flex items-center gap-1.5">
+                <CheckCircle2 class="w-3.5 h-3.5 text-emerald-500" /> HDS certifié
+              </span>
+            </div>
+            
+            <div v-motion :initial="{ y: 10 }" :enter="{ y: 0, transition: { repeat: Infinity, repeatType: 'mirror', duration: 3200, delay: 500 } }" class="absolute -bottom-4 -left-6 bg-white rounded-2xl px-3 py-2 shadow-xl">
+              <span class="text-xs font-semibold text-blue-700 flex items-center gap-1.5">
+                <Users class="w-3.5 h-3.5 text-blue-600" /> 284 patients
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="text-white">
+          <h1 class="text-3xl font-bold leading-tight">Gestion médicale<br />nouvelle génération</h1>
+          <p class="text-blue-100/80 text-sm mt-3 leading-relaxed max-w-xs">
+            Patients, ordonnances et rendez-vous centralisés dans une interface conçue pour les praticiens.
+          </p>
+        </div>
+        
+        <div class="flex gap-3">
+          <div v-for="s in ['256 médecins', '4 200 patients', '99.9% uptime']" :key="s" class="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
+            <span class="text-white text-xs font-medium">{{ s }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <p class="relative z-10 text-blue-200/70 text-xs">© 2026 MedApp · Conforme RGPD & HDS</p>
     </div>
-  </section>
+
+    <!-- Right panel -->
+    <div class="flex-1 flex items-center justify-center p-8">
+      <div v-motion :initial="{ opacity: 0, y: 20 }" :enter="{ opacity: 1, y: 0 }" class="w-full max-w-sm">
+        <template v-if="success">
+          <div v-motion :initial="{ scale: 0.85, opacity: 0 }" :enter="{ scale: 1, opacity: 1 }" class="text-center space-y-4">
+            <div v-motion :initial="{ scale: 0 }" :enter="{ scale: 1, transition: { type: 'spring', stiffness: 220, delay: 100 } }"
+              class="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mx-auto"
+            >
+              <CheckCircle2 class="w-10 h-10 text-emerald-600" />
+            </div>
+            <h2 class="text-xl font-bold text-foreground">Connexion réussie</h2>
+            <p class="text-muted-foreground text-sm">Redirection en cours…</p>
+          </div>
+        </template>
+        <template v-else>
+          <div class="mb-8">
+            <div class="flex items-center gap-2 mb-6 lg:hidden">
+              <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Stethoscope class="w-4 h-4 text-white" />
+              </div>
+              <span class="font-bold text-foreground">MedApp</span>
+            </div>
+            <h2 class="text-2xl font-bold text-foreground">Connexion</h2>
+            <p class="text-muted-foreground text-sm mt-1">Accédez à votre espace professionnel</p>
+          </div>
+
+          <div class="flex gap-1.5 p-1 bg-muted rounded-xl mb-6">
+            <button
+              v-for="r in ROLES"
+              :key="r.v"
+              @click="role = r.v; email = r.demo"
+              :class="cn(
+                'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all duration-200',
+                role === r.v ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              )"
+            >
+              <component :is="r.icon" :class="cn('w-3.5 h-3.5', role === r.v ? 'text-blue-600' : '')" />
+              {{ r.label }}
+            </button>
+          </div>
+
+          <form @submit.prevent="submit" class="space-y-4">
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-foreground">Email professionnel</label>
+              <div :class="cn(
+                'relative flex items-center rounded-xl border bg-background transition-all duration-200',
+                errs.email ? 'border-red-400 ring-2 ring-red-400/20' : 'border-border focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20'
+              )">
+                <Mail class="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <input
+                  type="email"
+                  v-model="email"
+                  placeholder="votre@email.fr"
+                  class="w-full h-10 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none pl-9 pr-3"
+                />
+              </div>
+              <p v-if="errs.email" class="text-xs text-red-500 flex items-center gap-1"><AlertCircle class="w-3 h-3" />{{ errs.email }}</p>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-foreground">Mot de passe</label>
+              <div :class="cn(
+                'relative flex items-center rounded-xl border bg-background transition-all duration-200',
+                errs.password ? 'border-red-400 ring-2 ring-red-400/20' : 'border-border focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20'
+              )">
+                <Lock class="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none" />
+                <input
+                  type="password"
+                  v-model="password"
+                  placeholder="••••••••"
+                  class="w-full h-10 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none pl-9 pr-3"
+                />
+              </div>
+              <p v-if="errs.password" class="text-xs text-red-500 flex items-center gap-1"><AlertCircle class="w-3 h-3" />{{ errs.password }}</p>
+            </div>
+
+            <div class="flex justify-end">
+              <button type="button" class="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                Mot de passe oublié ?
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              :disabled="loading"
+              class="w-full inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 px-5 py-2.5 text-base gap-2"
+            >
+              <template v-if="loading">
+                <Loader2 class="w-4 h-4 animate-spin" />Connexion…
+              </template>
+              <template v-else>
+                <ArrowRight class="w-4 h-4" />Se connecter
+              </template>
+            </button>
+          </form>
+
+          <div class="mt-6 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-900">
+            <p class="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-0.5">Mode démo</p>
+            <p class="text-xs text-blue-600/70 dark:text-blue-400/70">Email auto-rempli · n'importe quel mot de passe</p>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
 </template>

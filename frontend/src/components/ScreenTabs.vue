@@ -6,11 +6,12 @@ const { currentScreen, showScreen } = useMedAppState()
 </script>
 
 <template>
-  <section class="toolbar" aria-label="Navigation de maquette">
+  <section class="screen-tabs" aria-label="Navigation de maquette">
+    <span class="screen-tabs-label">Maquettes :</span>
     <button
       v-for="screen in screenButtons"
       :key="screen.id"
-      class="screen-btn"
+      class="screen-tab-btn"
       :class="{ active: currentScreen === screen.id }"
       type="button"
       @click="showScreen(screen.id)"

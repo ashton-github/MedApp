@@ -1,5 +1,13 @@
 import { createApp } from 'vue'
-import App from './App.vue'
-import './styles/medapp.css'
+import { createPinia } from 'pinia'
+import { MotionPlugin } from '@vueuse/motion'
 
-createApp(App).mount('#app')
+import './styles/medapp.css'
+import App from './App.vue'
+
+const app = createApp(App)
+
+app.use(createPinia())
+app.use(MotionPlugin)
+
+app.mount('#app')

@@ -1,5 +1,6 @@
 export const screens = {
   login: 'login',
+  dashboard: 'dashboard',
   patients: 'patients',
   patientForm: 'patient-form',
   ordonnances: 'ordonnances',
@@ -8,6 +9,7 @@ export const screens = {
 
 export const screenButtons = [
   { id: screens.login, label: 'Connexion' },
+  { id: screens.dashboard, label: 'Tableau de bord' },
   { id: screens.patients, label: 'Liste des patients' },
   { id: screens.patientForm, label: 'Fiche patient' },
   { id: screens.ordonnances, label: 'Liste des ordonnances' },
@@ -16,6 +18,7 @@ export const screenButtons = [
 
 export const addressMap = {
   login: 'localhost:5173/login',
+  dashboard: 'localhost:5173/dashboard',
   patients: 'localhost:5173/patients',
   'patient-form': 'localhost:5173/patients/1',
   ordonnances: 'localhost:5173/ordonnances',
