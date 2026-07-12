@@ -8,8 +8,11 @@ import LoginScreen from './components/screens/LoginScreen.vue'
 import DashboardScreen from './components/screens/DashboardScreen.vue'
 import PatientsScreen from './components/screens/PatientsScreen.vue'
 import PatientFormScreen from './components/screens/PatientFormScreen.vue'
+import PatientDetailScreen from './components/screens/PatientDetailScreen.vue'
 import OrdonnancesScreen from './components/screens/OrdonnancesScreen.vue'
 import OrdonnanceFormScreen from './components/screens/OrdonnanceFormScreen.vue'
+import PDFPreviewScreen from './components/screens/PDFPreviewScreen.vue'
+import SettingsScreen from './components/screens/SettingsScreen.vue'
 
 const { currentScreen } = useMedAppState()
 
@@ -22,9 +25,12 @@ const screenComponents = {
   [screens.login]: LoginScreen,
   [screens.dashboard]: DashboardScreen,
   [screens.patients]: PatientsScreen,
+  [screens.patientDetail]: PatientDetailScreen,
   [screens.patientForm]: PatientFormScreen,
   [screens.ordonnances]: OrdonnancesScreen,
-  [screens.ordonnanceForm]: OrdonnanceFormScreen
+  [screens.ordonnanceForm]: OrdonnanceFormScreen,
+  [screens.pdfPreview]: PDFPreviewScreen,
+  [screens.settings]: SettingsScreen
 }
 
 const currentScreenComponent = computed(() => screenComponents[currentScreen.value] || LoginScreen)

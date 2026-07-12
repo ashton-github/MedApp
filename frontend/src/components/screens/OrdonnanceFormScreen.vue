@@ -1,144 +1,225 @@
 <script setup>
+import { ref, computed } from 'vue'
+import {
+  ChevronLeft,
+  CheckCircle2,
+  Check,
+  Search,
+  Plus,
+  Trash2,
+  Loader2,
+  Calendar,
+  AlertCircle,
+  Eye,
+  FileCheck
+} from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
 import { screens } from '../../constants/medapp.js'
+import { cn } from '../../lib/utils.js'
 
-const { prescriptionDraft, showScreen } = useMedAppState()
+const { showScreen } = useMedAppState()
+
+const pq = ref('')
+const sel = ref(null)
+const showSug = ref(false)
+const meds = ref([{ name: '', dosage: '', duration: '' }])
+const notes = ref('')
+const submitting = ref(false)
+const done = ref(false)
+
+const PATIENTS = [
+  { id: "p1", firstName: "Sophie", lastName: "Laurent" },
+  { id: "p2", firstName: "Marc", lastName: "Dubois" },
+  { id: "p3", firstName: "Amira", lastName: "Benali" },
+  { id: "p4", firstName: "Théo", lastName: "Moreau" },
+  { id: "p5", firstName: "Claire", lastName: "Fontaine" },
+  { id: "p6", firstName: "Lucas", lastName: "Petit" },
+]
+
+const sug = computed(() => {
+  if (pq.value.length < 2) return []
+  return PATIENTS.filter(p => `${p.firstName} ${p.lastName}`.toLowerCase().includes(pq.value.toLowerCase()))
+})
+
+const addMed = () => meds.value.push({ name: '', dosage: '', duration: '' })
+const rmMed = (i) => meds.value.splice(i, 1)
+
+const submit = () => {
+  submitting.value = true
+  setTimeout(() => {
+    submitting.value = false
+    done.value = true
+    setTimeout(() => {
+      showScreen(screens.ordonnances)
+    }, 1400)
+  }, 1400)
+}
+
+const AVATAR_COLORS = [
+  "bg-blue-100 text-blue-700", "bg-emerald-100 text-emerald-700",
+  "bg-violet-100 text-violet-700", "bg-amber-100 text-amber-700",
+  "bg-rose-100 text-rose-700", "bg-cyan-100 text-cyan-700",
+]
+const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]
+const initials = (f, l) => `${f[0]}${l[0]}`.toUpperCase()
 </script>
 
 <template>
-  <section class="screen">
-    <div class="screen-header" style="margin-bottom: 16px;">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <button class="btn btn-ghost btn-sm" @click="showScreen(screens.ordonnances)" style="padding: 0 8px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-          Retour
+  <div v-if="done" class="flex flex-col items-center justify-center min-h-96 p-6">
+    <div v-motion :initial="{ scale: 0 }" :enter="{ scale: 1, transition: { type: 'spring', stiffness: 220 } }"
+      class="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mb-4"
+    >
+      <CheckCircle2 class="w-10 h-10 text-emerald-600" />
+    </div>
+    <h2 class="text-xl font-bold text-foreground">Ordonnance créée !</h2>
+    <p class="text-muted-foreground text-sm mt-1">Redirection en cours…</p>
+  </div>
+
+  <div v-else class="p-6 space-y-6">
+    <div>
+      <div class="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+        <button @click="showScreen(screens.ordonnances)" class="hover:text-foreground transition-colors">Ordonnances</button>
+        <ChevronRight class="w-3 h-3" />
+        <span class="text-foreground">Nouvelle ordonnance</span>
+      </div>
+      <h1 class="text-2xl font-bold text-foreground">Nouvelle ordonnance</h1>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 space-y-6">
+        <div class="rounded-2xl border border-border bg-card p-5">
+          <h2 class="font-semibold text-foreground mb-4">Patient</h2>
+          <template v-if="!sel">
+            <div class="relative">
+              <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input v-model="pq" @focus="showSug = true" @blur="setTimeout(() => showSug = false, 200)" placeholder="Rechercher un patient…" class="w-full h-10 pl-9 pr-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+              <div v-if="showSug && sug.length > 0" class="absolute left-0 right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-lg z-10 py-1 max-h-60 overflow-y-auto">
+                <button v-for="p in sug" :key="p.id" @click="sel = p; pq = ''; showSug = false" class="w-full text-left px-4 py-2 text-sm hover:bg-accent flex items-center gap-2">
+                  <div :class="['w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium shrink-0', avatarColor(p.firstName)]">
+                    {{ initials(p.firstName, p.lastName) }}
+                  </div>
+                  <span class="text-foreground">{{ p.firstName }} {{ p.lastName }}</span>
+                </button>
+              </div>
+              <div v-else-if="showSug && pq.length > 1" class="absolute left-0 right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-lg z-10 py-3 text-center text-sm text-muted-foreground">
+                Aucun patient trouvé
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <div class="flex items-center justify-between p-3 border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20 rounded-xl">
+              <div class="flex items-center gap-3">
+                <div :class="['w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0', avatarColor(sel.firstName)]">
+                  {{ initials(sel.firstName, sel.lastName) }}
+                </div>
+                <div>
+                  <p class="font-medium text-foreground text-sm">{{ sel.firstName }} {{ sel.lastName }}</p>
+                  <p class="text-xs text-muted-foreground">Patient sélectionné</p>
+                </div>
+              </div>
+              <button @click="sel = null" class="p-1.5 rounded-lg hover:bg-white dark:hover:bg-background text-muted-foreground transition-colors"><Trash2 class="w-4 h-4 text-red-500" /></button>
+            </div>
+            <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900 rounded-xl flex items-start gap-2 text-xs text-amber-800 dark:text-amber-400">
+              <AlertCircle class="w-4 h-4 shrink-0" />
+              <span>Vérifiez les allergies connues (ex: Pénicilline) avant de prescrire.</span>
+            </div>
+          </template>
+        </div>
+
+        <div class="rounded-2xl border border-border bg-card p-5">
+          <h2 class="font-semibold text-foreground mb-4">Paramètres</h2>
+          <div class="space-y-4">
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">Date de prescription</label>
+              <div class="relative">
+                <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input type="date" :value="new Date().toISOString().split('T')[0]" class="w-full h-9 pl-9 pr-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground" />
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">Validité (mois)</label>
+              <select class="w-full h-9 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground">
+                <option value="1">1 mois</option>
+                <option value="3">3 mois</option>
+                <option value="6">6 mois</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div v-for="(m, i) in meds" :key="i" v-motion :initial="{ opacity: 0, y: 10 }" :enter="{ opacity: 1, y: 0 }" class="rounded-2xl border border-border bg-card p-5 relative group">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-medium text-sm text-foreground flex items-center gap-2">Médicament {{ i + 1 }}</h3>
+            <button v-if="meds.length > 1" @click="rmMed(i)" class="text-muted-foreground hover:text-red-500 transition-colors"><Trash2 class="w-4 h-4" /></button>
+          </div>
+          <div class="space-y-4">
+            <div class="space-y-1.5">
+              <label class="text-xs font-medium text-foreground">Nom et format *</label>
+              <input v-model="m.name" placeholder="ex: Doliprane 1000mg comprimés" class="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-1.5">
+                <label class="text-xs font-medium text-foreground">Posologie *</label>
+                <input v-model="m.dosage" placeholder="ex: 1 matin et soir" class="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-xs font-medium text-foreground">Durée *</label>
+                <input v-model="m.duration" placeholder="ex: 5 jours" class="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button @click="addMed" class="w-full border-2 border-dashed border-border text-muted-foreground hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-all duration-200 rounded-2xl p-4 flex items-center justify-center gap-2 font-medium text-sm">
+          <Plus class="w-4 h-4" /> Ajouter un médicament
+        </button>
+
+        <div class="rounded-2xl border border-border bg-card p-5">
+          <h2 class="font-semibold text-foreground mb-4">Instructions supplémentaires (optionnel)</h2>
+          <textarea v-model="notes" placeholder="Recommandations hygiéno-diététiques, précautions particulières…" rows="3" class="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground resize-none" />
+        </div>
+        <div class="flex gap-3">
+          <button @click="showScreen(screens.ordonnances)" class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-4 py-2 text-sm gap-2">
+            Annuler
+          </button>
+          <button @click="submit" :disabled="!sel || meds[0].name === '' || submitting" class="flex-1 bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 px-4 py-2 text-sm gap-2">
+            <template v-if="submitting">
+              <Loader2 class="w-4 h-4 animate-spin" /> Création…
+            </template>
+            <template v-else>
+              <FileCheck class="w-4 h-4" /> Créer l'ordonnance
+            </template>
+          </button>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="rounded-2xl border border-border bg-card p-5">
+          <h3 class="font-semibold text-foreground mb-4">Aperçu</h3>
+          <div class="space-y-3 text-sm">
+            <div>
+              <p class="text-xs text-muted-foreground">Patient</p>
+              <p class="font-medium text-foreground mt-0.5">{{ sel ? `${sel.firstName} ${sel.lastName}` : "—" }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-muted-foreground">Date</p>
+              <p class="font-medium text-foreground mt-0.5 font-mono">{{ new Date().toLocaleDateString("fr-FR") }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-muted-foreground mb-1.5">Médicaments ({{ meds.filter(m => m.name).length }})</p>
+              <div class="space-y-1">
+                <div v-for="(m, i) in meds.filter(m => m.name)" :key="i" class="p-2 bg-muted rounded-xl">
+                  <p class="text-xs font-semibold text-foreground">{{ m.name }}</p>
+                  <p v-if="m.dosage || m.duration" class="text-xs text-muted-foreground">{{ m.dosage }}{{ m.dosage && m.duration ? ' · ' : '' }}{{ m.duration }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button @click="showScreen(screens.pdfPreview)" class="w-full border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-2 text-sm gap-2">
+          <Eye class="w-4 h-4" /> Aperçu PDF
         </button>
       </div>
     </div>
-    
-    <div class="form-card card-hover">
-      <div style="margin-bottom: 24px;">
-        <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--foreground);">Nouvelle ordonnance</h2>
-        <p style="font-size: 0.875rem; color: var(--muted-foreground); margin-top: 4px;">Créez une prescription médicale numérique sécurisée.</p>
-      </div>
-
-      <h3 class="form-section-title">Informations générales</h3>
-      <div class="form-grid" style="margin-bottom: 24px;">
-        <div class="form-group">
-          <label>Patient</label>
-          <div class="field">
-            <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-            <select v-model="prescriptionDraft.patient" style="padding-left: 40px;">
-              <option>Sophie Martin</option>
-              <option>Marc Dubois</option>
-              <option>Lucas Petit</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Date de validité</label>
-          <div class="field">
-            <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-            <input v-model="prescriptionDraft.validite" type="date" style="padding-left: 40px;" />
-          </div>
-        </div>
-      </div>
-
-      <h3 class="form-section-title" style="display: flex; justify-content: space-between;">
-        <span>Médicaments prescrits</span>
-        <span class="badge badge-muted">2 médicaments</span>
-      </h3>
-      
-      <div class="medication-grid">
-        <div class="form-group" style="margin: 0;">
-          <label style="font-size: 0.75rem;">Médicament</label>
-          <input v-model="prescriptionDraft.medicament1" placeholder="Nom du médicament" type="text" />
-        </div>
-        <div class="form-group" style="margin: 0;">
-          <label style="font-size: 0.75rem;">Dosage</label>
-          <input v-model="prescriptionDraft.dosage1" placeholder="Ex: 500mg" type="text" />
-        </div>
-        <div class="form-group" style="margin: 0;">
-          <label style="font-size: 0.75rem;">Fréquence</label>
-          <input v-model="prescriptionDraft.frequence1" placeholder="Ex: 3x/jour" type="text" />
-        </div>
-        <div class="form-group" style="margin: 0;">
-          <label style="font-size: 0.75rem;">Durée</label>
-          <input v-model="prescriptionDraft.duree1" placeholder="Ex: 7 jours" type="text" />
-        </div>
-        <button class="btn-sq btn-danger" type="button" style="height: 42px; margin-bottom: 0;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            <line x1="10" y1="11" x2="10" y2="17"></line>
-            <line x1="14" y1="11" x2="14" y2="17"></line>
-          </svg>
-        </button>
-      </div>
-
-      <div class="medication-grid">
-        <div class="form-group" style="margin: 0;">
-          <label style="font-size: 0.75rem; visibility: hidden;">Médicament</label>
-          <input v-model="prescriptionDraft.medicament2" placeholder="Nom du médicament" type="text" />
-        </div>
-        <div class="form-group" style="margin: 0;">
-          <label style="font-size: 0.75rem; visibility: hidden;">Dosage</label>
-          <input v-model="prescriptionDraft.dosage2" placeholder="Ex: 500mg" type="text" />
-        </div>
-        <div class="form-group" style="margin: 0;">
-          <label style="font-size: 0.75rem; visibility: hidden;">Fréquence</label>
-          <input v-model="prescriptionDraft.frequence2" placeholder="Ex: 3x/jour" type="text" />
-        </div>
-        <div class="form-group" style="margin: 0;">
-          <label style="font-size: 0.75rem; visibility: hidden;">Durée</label>
-          <input v-model="prescriptionDraft.duree2" placeholder="Ex: 7 jours" type="text" />
-        </div>
-        <button class="btn-sq btn-danger" type="button" style="height: 42px; margin-bottom: 0;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            <line x1="10" y1="11" x2="10" y2="17"></line>
-            <line x1="14" y1="11" x2="14" y2="17"></line>
-          </svg>
-        </button>
-      </div>
-
-      <div style="margin-bottom: 24px;">
-        <button class="btn btn-secondary btn-sm" type="button">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          Ajouter un médicament
-        </button>
-      </div>
-
-      <div class="form-group">
-        <label>Remarques (optionnel)</label>
-        <textarea v-model="prescriptionDraft.remarques" rows="2" placeholder="Remarques complémentaires pour le pharmacien ou le patient..."></textarea>
-      </div>
-
-      <div class="button-row">
-        <button class="btn btn-primary" type="button">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-            <polyline points="17 21 17 13 7 13 7 21"></polyline>
-            <polyline points="7 3 7 8 15 8"></polyline>
-          </svg>
-          Signer et enregistrer
-        </button>
-        <button class="btn btn-ghost" type="button" @click="showScreen(screens.ordonnances)">Annuler</button>
-      </div>
-    </div>
-  </section>
+  </div>
 </template>

@@ -92,13 +92,13 @@ const submit = (e) => {
             
             <div v-motion :initial="{ y: -10 }" :enter="{ y: 0, transition: { repeat: Infinity, repeatType: 'mirror', duration: 2800 } }" class="absolute -top-4 -right-6 bg-white rounded-2xl px-3 py-2 shadow-xl">
               <span class="text-xs font-semibold text-blue-700 flex items-center gap-1.5">
-                <CheckCircle2 class="w-3.5 h-3.5 text-emerald-500" /> HDS certifié
+                <CheckCircle2 class="w-3.5 h-3.5 text-emerald-500" /> TELNET
               </span>
             </div>
             
             <div v-motion :initial="{ y: 10 }" :enter="{ y: 0, transition: { repeat: Infinity, repeatType: 'mirror', duration: 3200, delay: 500 } }" class="absolute -bottom-4 -left-6 bg-white rounded-2xl px-3 py-2 shadow-xl">
               <span class="text-xs font-semibold text-blue-700 flex items-center gap-1.5">
-                <Users class="w-3.5 h-3.5 text-blue-600" /> 284 patients
+                <Users class="w-3.5 h-3.5 text-blue-600" /> Démo
               </span>
             </div>
           </div>
@@ -112,7 +112,7 @@ const submit = (e) => {
         </div>
         
         <div class="flex gap-3">
-          <div v-for="s in ['256 médecins', '4 200 patients', '99.9% uptime']" :key="s" class="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
+          <div v-for="s in ['N médecins', 'N patients', '99.9% uptime']" :key="s" class="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20">
             <span class="text-white text-xs font-medium">{{ s }}</span>
           </div>
         </div>

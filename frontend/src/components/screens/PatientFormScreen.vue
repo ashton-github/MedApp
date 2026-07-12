@@ -1,118 +1,198 @@
 <script setup>
+import { ref } from 'vue'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  CheckCircle2,
+  Loader2,
+  Phone,
+  Mail,
+  MapPin,
+  Shield
+} from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
 import { screens } from '../../constants/medapp.js'
+import { cn } from '../../lib/utils.js'
 
-const { patientDraft, showScreen } = useMedAppState()
+const { showScreen } = useMedAppState()
+
+const step = ref(1)
+const submitting = ref(false)
+const done = ref(false)
+
+const form = ref({
+  firstName: '',
+  lastName: '',
+  dob: '',
+  gender: '',
+  phone: '',
+  email: '',
+  address: '',
+  insurance: '',
+  allergies: '',
+  notes: ''
+})
+
+const STEPS = [
+  { n: 1, label: "Identité" },
+  { n: 2, label: "Coordonnées" },
+  { n: 3, label: "Médical" }
+]
+
+const submit = () => {
+  submitting.value = true
+  setTimeout(() => {
+    submitting.value = false
+    done.value = true
+    setTimeout(() => {
+      showScreen(screens.patients)
+    }, 1400)
+  }, 1400)
+}
 </script>
 
 <template>
-  <section class="screen">
-    <div class="screen-header" style="margin-bottom: 16px;">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <button class="btn btn-ghost btn-sm" @click="showScreen(screens.patients)" style="padding: 0 8px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-          Retour
-        </button>
+  <div v-if="done" class="flex flex-col items-center justify-center min-h-96 p-6">
+    <div v-motion :initial="{ scale: 0 }" :enter="{ scale: 1, transition: { type: 'spring', stiffness: 220 } }"
+      class="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mb-4"
+    >
+      <CheckCircle2 class="w-10 h-10 text-emerald-600" />
+    </div>
+    <h2 class="text-xl font-bold text-foreground">Patient créé !</h2>
+    <p class="text-muted-foreground text-sm mt-1">Redirection vers la liste…</p>
+  </div>
+
+  <div v-else class="p-6 max-w-2xl mx-auto space-y-6">
+    <div>
+      <div class="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+        <button @click="showScreen(screens.patients)" class="hover:text-foreground">Patients</button>
+        <ChevronRight class="w-3 h-3" />
+        <span class="text-foreground">Nouveau patient</span>
+      </div>
+      <h1 class="text-2xl font-bold text-foreground">Nouveau patient</h1>
+    </div>
+
+    <div class="flex items-center gap-0">
+      <div v-for="(s, i) in STEPS" :key="s.n" class="flex items-center flex-1">
+        <div class="flex flex-col items-center">
+          <div :class="cn(
+            'w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 border-2',
+            step > s.n ? 'bg-emerald-500 border-emerald-500 text-white' :
+            step === s.n ? 'bg-blue-600 border-blue-600 text-white' :
+            'bg-background border-border text-muted-foreground'
+          )">
+            <Check v-if="step > s.n" class="w-4 h-4" />
+            <span v-else>{{ s.n }}</span>
+          </div>
+          <span class="text-xs text-muted-foreground mt-1.5 hidden sm:block">{{ s.label }}</span>
+        </div>
+        <div v-if="i < STEPS.length - 1" :class="cn('flex-1 h-0.5 mx-3', step > s.n ? 'bg-emerald-400' : 'bg-border')" />
       </div>
     </div>
-    
-    <div class="form-card card-hover">
-      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
-        <div class="patient-avatar avatar-blue" style="width: 56px; height: 56px; font-size: 1.25rem;">
-          SM
-        </div>
-        <div>
-          <h2 style="font-size: 1.25rem; font-weight: 700;">Sophie Martin</h2>
-          <div style="display: flex; gap: 8px; margin-top: 4px;">
-            <span class="badge badge-success">Actif</span>
-            <span class="badge badge-muted">CPAM</span>
-          </div>
-        </div>
-      </div>
 
-      <h3 class="form-section-title">Informations personnelles</h3>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Nom</label>
-          <input v-model="patientDraft.nom" type="text" placeholder="Ex: Martin" />
-        </div>
-        <div class="form-group">
-          <label>Prénom</label>
-          <input v-model="patientDraft.prenom" type="text" placeholder="Ex: Sophie" />
-        </div>
-        <div class="form-group">
-          <label>Date de naissance</label>
-          <input v-model="patientDraft.naissance" type="date" />
-        </div>
-        <div class="form-group">
-          <label>Téléphone</label>
-          <input v-model="patientDraft.telephone" type="tel" placeholder="+33 6 XX XX XX XX" />
-        </div>
-        <div class="form-group form-full">
-          <label>Adresse</label>
-          <input v-model="patientDraft.adresse" type="text" placeholder="123 rue de la République, 75001 Paris" />
-        </div>
-      </div>
+    <div class="rounded-2xl border border-border bg-card p-6 overflow-hidden">
+      <transition
+        mode="out-in"
+        enter-active-class="transition duration-150 ease-out"
+        enter-from-class="opacity-0 translate-x-4"
+        enter-to-class="opacity-100 translate-x-0"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100 translate-x-0"
+        leave-to-class="opacity-0 -translate-x-4"
+      >
+        <div :key="step" class="space-y-4">
+          <template v-if="step === 1">
+            <h2 class="font-semibold text-foreground">Informations personnelles</h2>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium text-foreground">Prénom *</label>
+                <input v-model="form.firstName" placeholder="Sophie" class="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium text-foreground">Nom *</label>
+                <input v-model="form.lastName" placeholder="Laurent" class="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-foreground">Date de naissance *</label>
+              <input type="date" v-model="form.dob" class="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-foreground">Genre *</label>
+              <div class="flex gap-3">
+                <button v-for="g in [{ v: 'M', l: 'Homme' }, { v: 'F', l: 'Femme' }]" :key="g.v" type="button" @click="form.gender = g.v"
+                  :class="cn('flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all', form.gender === g.v ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'border-border text-muted-foreground hover:bg-accent')"
+                >
+                  {{ g.l }}
+                </button>
+              </div>
+            </div>
+          </template>
 
-      <h3 class="form-section-title">Dossier médical</h3>
-      <div class="form-group">
-        <label>Antécédents & allergies</label>
-        <textarea v-model="patientDraft.antecedents" rows="3" placeholder="Aucun antécédent particulier connu..."></textarea>
-      </div>
+          <template v-else-if="step === 2">
+            <h2 class="font-semibold text-foreground">Coordonnées</h2>
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-foreground">Téléphone *</label>
+              <div class="relative">
+                <Phone class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input v-model="form.phone" placeholder="+33 6 12 34 56 78" class="w-full h-10 pl-9 pr-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-foreground">Email</label>
+              <div class="relative">
+                <Mail class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input type="email" v-model="form.email" placeholder="patient@email.fr" class="w-full h-10 pl-9 pr-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-foreground">Adresse</label>
+              <div class="relative">
+                <MapPin class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input v-model="form.address" placeholder="123 rue de la Paix, 75001 Paris" class="w-full h-10 pl-9 pr-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-foreground">Assurance maladie</label>
+              <div class="relative">
+                <Shield class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input v-model="form.insurance" placeholder="CPAM Paris" class="w-full h-10 pl-9 pr-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+              </div>
+            </div>
+          </template>
 
-      <div class="button-row">
-        <button class="btn btn-primary" type="button">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-            <polyline points="17 21 17 13 7 13 7 21"></polyline>
-            <polyline points="7 3 7 8 15 8"></polyline>
-          </svg>
-          Enregistrer
-        </button>
-        <button class="btn btn-ghost" type="button" @click="showScreen(screens.patients)">Annuler</button>
-      </div>
-
-      <div class="history">
-        <h3>Historique des ordonnances</h3>
-        <div class="history-row">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 32px; height: 32px; background: var(--muted); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
-              </svg>
+          <template v-else-if="step === 3">
+            <h2 class="font-semibold text-foreground">Antécédents médicaux</h2>
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-foreground">Allergies connues</label>
+              <textarea v-model="form.allergies" placeholder="Pénicilline, Aspirine…" rows="3" class="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground resize-none" />
             </div>
-            <div>
-              <div style="font-weight: 500;">Prescription standard</div>
-              <div style="font-size: 0.75rem; color: var(--muted-foreground);">12/06/2026</div>
+            <div class="space-y-1.5">
+              <label class="text-sm font-medium text-foreground">Notes médicales</label>
+              <textarea v-model="form.notes" placeholder="Antécédents, traitements en cours…" rows="4" class="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground resize-none" />
             </div>
-          </div>
-          <span class="badge badge-success">Active</span>
+          </template>
         </div>
-        <div class="history-row">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 32px; height: 32px; background: var(--muted); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--muted-foreground);">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
-              </svg>
-            </div>
-            <div>
-              <div style="font-weight: 500;">Antibiotiques</div>
-              <div style="font-size: 0.75rem; color: var(--muted-foreground);">03/01/2026</div>
-            </div>
-          </div>
-          <span class="badge badge-error">Expirée</span>
-        </div>
-      </div>
+      </transition>
     </div>
-  </section>
+
+    <div class="flex justify-between">
+      <button @click="step === 1 ? showScreen(screens.patients) : step--" class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-4 py-2 text-sm gap-2">
+        <ChevronLeft class="w-4 h-4" /> {{ step === 1 ? "Annuler" : "Précédent" }}
+      </button>
+      
+      <button v-if="step < 3" @click="step++" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-4 py-2 text-sm gap-2">
+        Suivant <ChevronRight class="w-4 h-4" />
+      </button>
+      <button v-else @click="submit" :disabled="submitting" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 px-4 py-2 text-sm gap-2">
+        <template v-if="submitting">
+          <Loader2 class="w-4 h-4 animate-spin" /> Création…
+        </template>
+        <template v-else>
+          <Check class="w-4 h-4" /> Créer le patient
+        </template>
+      </button>
+    </div>
+  </div>
 </template>
