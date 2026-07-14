@@ -41,7 +41,7 @@ public class AuthService {
     }
 
     public LoginResult login(String email  , String password) {
-        User user = userRepository.findByEmail(email).get();
+        User user = userRepository.findByEmail(email).orElseThrow(IdentifiantsInvalidesException::new);
 
         if(!passwordEncoder.matches(password, user.getPasswordHash())) {
             throw new IdentifiantsInvalidesException();

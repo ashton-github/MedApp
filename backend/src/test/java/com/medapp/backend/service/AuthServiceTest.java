@@ -130,5 +130,19 @@ public class AuthServiceTest {
 
     }
 
+    @Test
+    void login_lanceException_siCompteInexistant(){
+        //
+        String email = "inconnue@medapp.com";
+        String motDePasse = "MotDePasse123!";
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+
+        assertThrows(IdentifiantsInvalidesException.class , () -> 
+            authService.login(email, motDePasse)
+        );
+
+    }
+
     
 }
