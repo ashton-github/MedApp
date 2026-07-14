@@ -21,6 +21,7 @@ import com.medapp.backend.exception.MotDePasseInvalideException;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.model.User;
 import com.medapp.backend.repository.UserRepository;
+import com.medapp.backend.security.JwtService;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.never;
@@ -87,5 +88,28 @@ public class AuthServiceTest {
 
         verify(userRepository , never()).save(any(User.class));
     }
+
+    @Mock
+    private JwtService jwtService;
+
+    @Test
+    void login_retournerToken_siIdentifiantsCorrects(){
+        //
+        String email= "medecin@medapp.com";
+        String password = "MotDePasse123!";
+        User user = new User(email , "hashedPassword123", "Dupont", "Jean", Role.MEDECIN , true , LocalDateTime.now() , null);
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(jwtService.generateToken(user)).thenReturn("fake-jwt-token");
+
+        //
+        LoginResult result = authService.login(email , password);
+
+
+        //then
+        assertEquals("fake-jwt-token", result.token());
+        assertEquals(Role.MEDECIN, result.role());
+    }
+
     
 }
