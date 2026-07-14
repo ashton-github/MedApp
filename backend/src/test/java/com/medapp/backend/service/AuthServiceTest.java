@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.medapp.backend.exception.EmailDejaUtiliseException;
+import com.medapp.backend.exception.MotDePasseInvalideException;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.model.User;
 import com.medapp.backend.repository.UserRepository;
@@ -70,6 +71,21 @@ public class AuthServiceTest {
 
         verify(userRepository , never()).save(any(User.class));
 
+    }
+
+    @Test
+    void register_lanceException_siMotDePasseInvalide(){
+        //given 
+        String email = "medecin@medapp.com";
+        String motDePasseFaible  = "123";
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+
+        assertThrows(MotDePasseInvalideException.class , () -> 
+            authService.register(email , motDePasseFaible , "Martin" , "Paul" , Role.MEDECIN , true , LocalDateTime.now() , null)
+        );
+
+        verify(userRepository , never()).save(any(User.class));
     }
     
 }
