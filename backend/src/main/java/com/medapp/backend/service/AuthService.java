@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.medapp.backend.exception.EmailDejaUtiliseException;
+import com.medapp.backend.exception.IdentifiantsInvalidesException;
 import com.medapp.backend.exception.MotDePasseInvalideException;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.model.User;
@@ -41,6 +42,11 @@ public class AuthService {
 
     public LoginResult login(String email  , String password) {
         User user = userRepository.findByEmail(email).get();
+
+        if(!passwordEncoder.matches(password, user.getPasswordHash())) {
+            throw new IdentifiantsInvalidesException();
+        }
+        
         String token = jwtService.generateToken(user);
         return new LoginResult(token , user.getRole());
     }

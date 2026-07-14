@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.medapp.backend.exception.EmailDejaUtiliseException;
+import com.medapp.backend.exception.IdentifiantsInvalidesException;
 import com.medapp.backend.exception.MotDePasseInvalideException;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.model.User;
@@ -100,6 +101,7 @@ public class AuthServiceTest {
         User user = new User(email , "hashedPassword123", "Dupont", "Jean", Role.MEDECIN , true , LocalDateTime.now() , null);
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(password, "hashedPassword123")).thenReturn(true);
         when(jwtService.generateToken(user)).thenReturn("fake-jwt-token");
 
         //
@@ -109,6 +111,23 @@ public class AuthServiceTest {
         //then
         assertEquals("fake-jwt-token", result.token());
         assertEquals(Role.MEDECIN, result.role());
+    }
+
+    @Test
+    void login_lanceException_siMotDePasseIncorrect(){
+        //given 
+        String email = "medecin@medapp.com";
+        String motDePasseSaisi = "MauvaisMotDePasse122!";
+        User user = new User(email , "hashedPassword123", "Dupont", "Jean", Role.MEDECIN , true , LocalDateTime.now() , null);
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(motDePasseSaisi , "hashedPassword123")).thenReturn(false);
+
+        //
+        assertThrows(IdentifiantsInvalidesException.class , () ->
+            authService.login(email, motDePasseSaisi)
+        );
+
     }
 
     
