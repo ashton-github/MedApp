@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.medapp.backend.exception.CompteDesactiveException;
 import com.medapp.backend.exception.EmailDejaUtiliseException;
 import com.medapp.backend.exception.IdentifiantsInvalidesException;
 import com.medapp.backend.exception.MotDePasseInvalideException;
@@ -45,6 +46,9 @@ public class AuthService {
 
         if(!passwordEncoder.matches(password, user.getPasswordHash())) {
             throw new IdentifiantsInvalidesException();
+        }
+        if(!user.isActif()){
+            throw new CompteDesactiveException();
         }
         
         String token = jwtService.generateToken(user);

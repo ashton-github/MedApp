@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.medapp.backend.exception.CompteDesactiveException;
 import com.medapp.backend.exception.EmailDejaUtiliseException;
 import com.medapp.backend.exception.IdentifiantsInvalidesException;
 import com.medapp.backend.exception.MotDePasseInvalideException;
@@ -144,5 +145,20 @@ public class AuthServiceTest {
 
     }
 
+    @Test
+    void login_lanceException_siCompteDesactive(){
+        //
+        String email = "medecin@medapp.com";
+        String password = "MotDePasse123!";
+        User user = new User(email , "hashedPassword123", "Dupont", "Jean", Role.MEDECIN , false , LocalDateTime.now() , null);
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(password, "hashedPassword123")).thenReturn(true);
+
+        assertThrows(CompteDesactiveException.class , () -> 
+            authService.login(email , password  )
+        ); 
+
+    }
     
 }
