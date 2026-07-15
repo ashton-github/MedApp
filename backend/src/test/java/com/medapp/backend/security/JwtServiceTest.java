@@ -13,7 +13,10 @@ import com.medapp.backend.model.User;
 
 public class JwtServiceTest {
 
-    private final JwtService jwtService = new JwtService();
+    private final JwtService jwtService = new JwtService(
+        "une-cle-secret-suffisamment-longue-pour-les-tests-hs256" , 
+        1800000
+    );
 
     @Test
     void generateToken_creeUnTokenValide(){

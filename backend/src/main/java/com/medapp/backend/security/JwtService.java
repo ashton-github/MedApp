@@ -1,9 +1,11 @@
 package com.medapp.backend.security;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.medapp.backend.model.User;
@@ -14,15 +16,19 @@ import io.jsonwebtoken.security.Keys;
 @Service
 public class JwtService {
 
-    //cle secrete generee une fois au demarrage a deplace en config(application.yml)
-    private final SecretKey secretKey = Keys.secretKeyFor(io.jsonwebtoken.SignatureAlgorithm.HS256);
-    
-    private static final long EXPIRATION_MS = 30*60*1000; //30 mins
+    private final SecretKey secretKey;
+    private final long expirationMs;
 
+    public JwtService(
+        @Value("${jwt.secret}") String secret,
+        @Value("${jwt.expiration-ms}") long expirationMs){
+            this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+            this.expirationMs = expirationMs;
+        }
 
     public String generateToken(User user) {
         Date maintenant = new Date();
-        Date expiration = new Date(maintenant.getTime() + EXPIRATION_MS);
+        Date expiration = new Date(maintenant.getTime() + expirationMs);
 
         return Jwts.builder()
                 .subject(user.getId())

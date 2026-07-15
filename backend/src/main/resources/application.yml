@@ -20,3 +20,7 @@ management:
 logging:
   level:
     com.medapp: DEBUG
+
+jwt:
+  secret: "une-cle-suffisament-longue-pour-hs256-en-dev"
+  expiration-ms: 1800000 #30 minutes
