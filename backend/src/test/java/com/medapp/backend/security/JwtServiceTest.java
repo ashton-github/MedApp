@@ -1,5 +1,6 @@
 package com.medapp.backend.security;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.time.LocalDateTime;
@@ -25,6 +26,20 @@ public class JwtServiceTest {
         assertNotNull(token);
 
 
+    }
+
+    @Test 
+    void extractUserId_retourneEdUtilisateur_pourTokenValide(){
+        User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
+
+        user.setId("user-id-123");
+        String token = jwtService.generateToken(user);
+        
+        //when
+        String userId = jwtService.extractUserId(token);
+
+        //then
+        assertEquals("user-id-123" , userId);
     }
     
 }
