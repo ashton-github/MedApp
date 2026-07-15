@@ -78,5 +78,22 @@ public class JwtServiceTest {
         assertEquals(false, estValide);        
 
     }
+
+    @Test 
+    void isTokenValid_retourneFalse_pourTokenSigneAvecMauvaiseCle(){
+        //
+        JwtService jwtSericeAutreCle = new JwtService("une-cle-secrete-suffisament-longue-pour-les-tests-hs356",  1800000);
+        User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
+        user.setId("user-id-123");
+
+        String tokenSigneAvecAutreCle = jwtSericeAutreCle.generateToken(user);
+
+        //when
+        boolean estValide = jwtService.isTokenValid(tokenSigneAvecAutreCle);
+
+        //then
+        assertEquals(false, estValide);
+
+    }
     
 }
