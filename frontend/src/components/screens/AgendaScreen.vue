@@ -131,5 +131,41 @@ const fmtWeekRange = computed(() => {
         </div>
       </div>
     </div>
+
+    <!-- Upcoming list -->
+    <div class="rounded-2xl border border-border bg-card p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-foreground">Liste des rendez-vous</h3>
+        <div class="flex gap-1 text-xs">
+          <span v-for="(cls, type) in TYPE_CLS" :key="type" :class="cn('px-2 py-0.5 rounded-full border font-medium', cls)">{{ type }}</span>
+        </div>
+      </div>
+      <div class="space-y-2">
+        <div
+          v-for="(a, i) in APPOINTMENTS"
+          :key="a.id"
+          v-motion
+          :initial="{ opacity: 0, x: -8 }"
+          :enter="{ opacity: 1, x: 0, transition: { delay: i * 50 } }"
+          :class="cn('flex items-center gap-3 p-3 rounded-xl hover:bg-accent/50 transition-colors cursor-pointer', a.day < '2026-07-13' ? 'opacity-50' : '')"
+          @click="showScreen('patientDetail')"
+        >
+          <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">
+            {{ a.patientName.split(' ')[0][0] }}{{ a.patientName.split(' ')[1][0] }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-foreground">{{ a.patientName }}</p>
+            <p class="text-xs text-muted-foreground">
+              {{ new Date(a.day).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }) }} à {{ a.time }}
+            </p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span :class="cn('text-xs px-2 py-0.5 rounded-full border font-medium', TYPE_CLS[a.type] || 'bg-muted border-border')">{{ a.type }}</span>
+            <span class="text-xs text-muted-foreground font-mono">{{ a.duration }}min</span>
+            <span v-if="a.day < '2026-07-13'" class="text-xs text-muted-foreground">Passé</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

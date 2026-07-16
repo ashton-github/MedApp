@@ -13,6 +13,7 @@ import OrdonnancesScreen from './components/screens/OrdonnancesScreen.vue'
 import OrdonnanceFormScreen from './components/screens/OrdonnanceFormScreen.vue'
 import PDFPreviewScreen from './components/screens/PDFPreviewScreen.vue'
 import AgendaScreen from './components/screens/AgendaScreen.vue'
+import AccountRequestsScreen from './components/screens/AccountRequestsScreen.vue'
 import SettingsScreen from './components/screens/SettingsScreen.vue'
 
 const { currentScreen } = useMedAppState()
@@ -32,6 +33,7 @@ const screenComponents = {
   [screens.ordonnanceForm]: OrdonnanceFormScreen,
   [screens.pdfPreview]: PDFPreviewScreen,
   [screens.agenda]: AgendaScreen,
+  [screens.accountRequests]: AccountRequestsScreen,
   [screens.settings]: SettingsScreen
 }
 
@@ -39,7 +41,7 @@ const currentScreenComponent = computed(() => screenComponents[currentScreen.val
 </script>
 
 <template>
-  <div class="min-h-screen flex bg-background text-foreground">
+  <div class="flex h-screen overflow-hidden bg-background text-foreground">
     <template v-if="currentScreen === screens.login">
       <LoginScreen />
     </template>

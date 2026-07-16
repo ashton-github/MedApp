@@ -10,7 +10,10 @@ import {
   Pencil,
   AlertCircle
 } from 'lucide-vue-next'
+import { useMedAppState } from '../../composables/useMedAppState.js'
+import { screens } from '../../constants/medapp.js'
 
+const { showScreen } = useMedAppState()
 const loading = ref(true)
 onMounted(() => {
   setTimeout(() => loading.value = false, 1100)
@@ -64,10 +67,10 @@ const fmt = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", mon
         <p class="text-muted-foreground text-sm mt-0.5 capitalize">{{ today }}</p>
       </div>
       <div class="flex gap-2">
-        <button class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
+        <button @click="showScreen(screens.agenda)" class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
           <Calendar class="w-4 h-4" /> Agenda
         </button>
-        <button class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
+        <button @click="showScreen(screens.patientForm)" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
           Nouveau patient
         </button>
       </div>

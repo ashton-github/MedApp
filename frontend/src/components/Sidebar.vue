@@ -8,7 +8,8 @@ import {
   LogOut,
   Stethoscope,
   ChevronLeft,
-  Calendar
+  Calendar,
+  UserPlus
 } from 'lucide-vue-next'
 import { useMedAppState } from '../composables/useMedAppState.js'
 import { screens } from '../constants/medapp.js'
@@ -21,13 +22,19 @@ const props = defineProps({
 const emit = defineEmits(['toggle'])
 const { currentScreen, showScreen, authUser, logout } = useMedAppState()
 
-const NAV = [
-  { s: screens.dashboard, label: "Tableau de bord", icon: LayoutDashboard },
-  { s: screens.patients, label: "Patients", icon: Users },
-  { s: screens.ordonnances, label: "Ordonnances", icon: FileText },
-  { s: screens.agenda, label: "Agenda", icon: Calendar },
-  { s: screens.settings, label: "Paramètres", icon: Settings },
-]
+const NAV = computed(() => {
+  const items = [
+    { s: screens.dashboard, label: "Tableau de bord", icon: LayoutDashboard },
+    { s: screens.patients, label: "Patients", icon: Users },
+    { s: screens.ordonnances, label: "Ordonnances", icon: FileText },
+    { s: screens.agenda, label: "Agenda", icon: Calendar },
+  ]
+  if (authUser.value?.role === 'admin') {
+    items.push({ s: screens.accountRequests, label: "Demandes d'accès", icon: UserPlus })
+  }
+  items.push({ s: screens.settings, label: "Paramètres", icon: Settings })
+  return items
+})
 
 const isActive = (screen) => {
   if (screen === screens.patients && [screens.patientForm, screens.patientDetail].includes(currentScreen.value)) return true

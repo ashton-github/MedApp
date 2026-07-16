@@ -116,7 +116,7 @@ const backToLogin = () => { view.value = 'login' }
             
             <div v-motion :initial="{ y: -10 }" :enter="{ y: 0, transition: { repeat: Infinity, repeatType: 'mirror', duration: 2800 } }" class="absolute -top-4 -right-6 bg-white rounded-2xl px-3 py-2 shadow-xl">
               <span class="text-xs font-semibold text-blue-700 flex items-center gap-1.5">
-                <CheckCircle2 class="w-3.5 h-3.5 text-emerald-500" /> HDS Certifié
+                <CheckCircle2 class="w-3.5 h-3.5 text-emerald-500" /> Version 1.0.0
               </span>
             </div>
             
@@ -142,7 +142,7 @@ const backToLogin = () => { view.value = 'login' }
         </div>
       </div>
       
-      <p class="relative z-10 text-blue-200/70 text-xs">© 2026 MedApp · Conforme RGPD &amp; HDS</p>
+      <p class="relative z-10 text-blue-200/70 text-xs">© 2026 MedApp · Tous les droits sont réservés</p>
     </div>
 
     <!-- Right panel -->
