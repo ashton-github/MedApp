@@ -19,7 +19,7 @@ import org.testcontainers.junit.jupiter.Container;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
@@ -101,6 +101,28 @@ public class AuthControllerIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").exists())
                 .andExpect(jsonPath("$.role").value("MEDECIN"));
+    }
+
+
+    @Test
+    void login_retourne401_siMotDePasseIncorrect()throws Exception {
+        //
+        RegisterRequest registerRequest = new RegisterRequest(
+                "mauvaismdp@medapp.com", "MotDePasse123!", "Dupont", "Jean", Role.MEDECIN
+        );
+        mockMvc.perform(post("/api/auth/register")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(registerRequest)))
+                .andExpect(status().isCreated());
+                
+        LoginRequest loginRequest = new LoginRequest("mauvaismdp@medapp.com", "incorrectPassword1!");
+
+        //when then
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                    .andDo(print())
+                    .andExpect(status().isUnauthorized());
     }
     
 }

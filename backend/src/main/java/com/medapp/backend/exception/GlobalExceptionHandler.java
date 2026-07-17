@@ -23,12 +23,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IdentifiantsInvalidesException.class)
     public ResponseEntity<Map<String , String>> handleIdentifiantsInvalides(IdentifiantsInvalidesException ex){
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message" , ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message" , ex.getMessage()));
     }
 
     @ExceptionHandler(CompteDesactiveException.class)
     public ResponseEntity<Map<String , String>> handleCompteDesactivve(CompteDesactiveException ex){
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message" , ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message" , ex.getMessage()));
     }
     
 
