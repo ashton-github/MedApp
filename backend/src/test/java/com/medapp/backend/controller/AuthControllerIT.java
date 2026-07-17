@@ -47,5 +47,25 @@ public class AuthControllerIT {
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.email").value("medecin@medapp.com"));   
     }
+
+    @Test
+    void register_retourne409_siEmailDejaUtilise()throws Exception {
+        //
+        RegisterRequest rquest = new RegisterRequest(
+            "medecin@medapp.com" , "MotDePasse123!" , "Dupont" , "Jean" , Role.MEDECIN
+        );
+
+        //on inscrit une premiere fois
+        mockMvc.perform(post("/api/auth/register")
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(rquest)));
+
+        //when / then la deuxieme inscription avec la meme email doit echouer
+        mockMvc.perform(post("/api/auth/register")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(rquest)))
+                .andExpect(status().isConflict());
+
+    }
     
 }
