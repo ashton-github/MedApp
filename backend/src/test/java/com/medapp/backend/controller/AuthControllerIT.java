@@ -10,6 +10,7 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.medapp.backend.dto.LoginRequest;
 import com.medapp.backend.dto.RegisterRequest;
 import com.medapp.backend.model.Role;
 
@@ -17,6 +18,7 @@ import org.testcontainers.junit.jupiter.Container;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -78,6 +80,27 @@ public class AuthControllerIT {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(requet)))
                 .andExpect(status().isBadRequest());       
+    }
+
+    @Test
+    void login_retourne200_siIdentifiantsCorrects() throws Exception {
+        // Given — on crée d'abord un utilisateur via register
+        RegisterRequest registerRequest = new RegisterRequest(
+                "login-test@medapp.com", "MotDePasse123!", "Dupont", "Jean", Role.MEDECIN
+        );
+        mockMvc.perform(post("/api/auth/register")
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(registerRequest)));
+
+        LoginRequest loginRequest = new LoginRequest("login-test@medapp.com", "MotDePasse123!");
+
+        // When / Then
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").exists())
+                .andExpect(jsonPath("$.role").value("MEDECIN"));
     }
     
 }
