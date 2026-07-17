@@ -3,6 +3,7 @@ package com.medapp.backend.service;
 import java.time.LocalDateTime;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
 import com.medapp.backend.exception.CompteDesactiveException;
 import com.medapp.backend.exception.EmailDejaUtiliseException;
@@ -13,6 +14,8 @@ import com.medapp.backend.model.User;
 import com.medapp.backend.repository.UserRepository;
 import com.medapp.backend.security.JwtService;
 
+
+@Service
 public class AuthService {
 
     private final UserRepository userRepository;
