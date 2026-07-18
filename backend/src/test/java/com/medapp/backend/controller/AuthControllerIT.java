@@ -53,7 +53,8 @@ public class AuthControllerIT {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.email").value("medecin@medapp.com"));   
+                    .andExpect(jsonPath("$.email").value("medecin@medapp.com"))
+                    .andExpect(jsonPath("$.passwordHash").doesNotExist());   
     }
 
     @Test

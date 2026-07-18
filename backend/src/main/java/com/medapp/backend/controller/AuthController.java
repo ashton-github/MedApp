@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.medapp.backend.dto.LoginRequest;
 import com.medapp.backend.dto.RegisterRequest;
+import com.medapp.backend.dto.RegisterResponse;
 import com.medapp.backend.model.User;
 import com.medapp.backend.service.AuthService;
 import com.medapp.backend.dto.LoginResult;
@@ -28,12 +29,16 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         User user = authService.register(
             request.email(), request.password(), request.nom(), request.prenom(), 
             request.role(), true, java.time.LocalDateTime.now(), null);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        RegisterResponse response = new RegisterResponse(
+            user.getId() , user.getEmail() , user.getNom() , user.getPrenom() , user.getRole()
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
     }
 
