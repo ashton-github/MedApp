@@ -54,7 +54,7 @@ public class AuthService {
             throw new CompteDesactiveException();
         }
         
-        String token = jwtService.generateToken(user);
+        String token = jwtService.generateAccessToken(user);
         return new LoginResult(token , user.getRole());
     }
     

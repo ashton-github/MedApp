@@ -27,13 +27,14 @@ public class JwtService {
             this.expirationMs = expirationMs;
         }
 
-    public String generateToken(User user) {
+    public String generateAccessToken(User user) {
         Date maintenant = new Date();
         Date expiration = new Date(maintenant.getTime() + expirationMs);
 
         return Jwts.builder()
                 .subject(user.getId())
                 .claim("role", user.getRole().name())
+                .claim("type" , "access")
                 .issuedAt(maintenant)
                 .expiration(expiration)
                 .signWith(secretKey)

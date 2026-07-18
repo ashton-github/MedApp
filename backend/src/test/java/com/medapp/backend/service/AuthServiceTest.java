@@ -103,7 +103,7 @@ public class AuthServiceTest {
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(password, "hashedPassword123")).thenReturn(true);
-        when(jwtService.generateToken(user)).thenReturn("fake-jwt-token");
+        when(jwtService.generateAccessToken(user)).thenReturn("fake-jwt-token");
 
         //
         LoginResult result = authService.login(email , password);

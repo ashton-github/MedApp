@@ -52,7 +52,7 @@ public class JwtAuthenticationFilterTest {
         //
         User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
         user.setId("user-id-123");
-        String token = jwtService.generateToken(user);
+        String token = jwtService.generateAccessToken(user);
 
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
 

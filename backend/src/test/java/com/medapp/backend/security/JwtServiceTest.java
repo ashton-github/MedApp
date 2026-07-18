@@ -24,7 +24,7 @@ public class JwtServiceTest {
         User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
 
         //
-        String token = jwtService.generateToken(user);
+        String token = jwtService.generateAccessToken(user);
         //
         assertNotNull(token);
 
@@ -36,7 +36,7 @@ public class JwtServiceTest {
         User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
 
         user.setId("user-id-123");
-        String token = jwtService.generateToken(user);
+        String token = jwtService.generateAccessToken(user);
         
         //when
         String userId = jwtService.extractUserId(token);
@@ -51,7 +51,7 @@ public class JwtServiceTest {
         User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
         user.setId("user-id-123");
 
-        String token = jwtService.generateToken(user);
+        String token = jwtService.generateAccessToken(user);
 
         //when
         String role  = jwtService.extractRole(token);
@@ -69,7 +69,7 @@ public class JwtServiceTest {
         User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
         user.setId("user-id-123");
 
-        String tokenExpire = jwtServiceExpirationImmediate.generateToken(user);
+        String tokenExpire = jwtServiceExpirationImmediate.generateAccessToken(user);
 
         //when
         boolean estValide = jwtService.isTokenValid(tokenExpire);
@@ -86,7 +86,7 @@ public class JwtServiceTest {
         User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
         user.setId("user-id-123");
 
-        String tokenSigneAvecAutreCle = jwtSericeAutreCle.generateToken(user);
+        String tokenSigneAvecAutreCle = jwtSericeAutreCle.generateAccessToken(user);
 
         //when
         boolean estValide = jwtService.isTokenValid(tokenSigneAvecAutreCle);
