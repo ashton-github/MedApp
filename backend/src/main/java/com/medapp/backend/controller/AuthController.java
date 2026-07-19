@@ -78,7 +78,18 @@ public class AuthController {
 
         LoginResult result = authService.refreshToken(refreshToken);
         LoginResponse response = new LoginResponse(result.accessToken(), result.role());
-        return ResponseEntity.ok(response);
+
+        ResponseCookie refreshedCookie = ResponseCookie.from("refresh_token", result.refreshToken())
+                .httpOnly(true)
+                .secure(false) // à passer à true en production
+                .sameSite("Strict")
+                .path("/api/auth")
+                .maxAge(Duration.ofDays(7))
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshedCookie.toString())
+                .body(response);
     }
     
     

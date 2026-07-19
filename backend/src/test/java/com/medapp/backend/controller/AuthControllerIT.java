@@ -21,6 +21,7 @@ import org.testcontainers.junit.jupiter.Container;
 
 import org.springframework.test.web.servlet.MvcResult;
 import jakarta.servlet.http.Cookie;
+import org.hamcrest.Matchers;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -195,7 +196,9 @@ public class AuthControllerIT {
         mockMvc.perform(post("/api/auth/refresh-token")
                         .cookie(refreshCookie))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").exists());
+                .andExpect(jsonPath("$.accessToken").exists())
+                .andExpect(header().string("Set-Cookie", Matchers.containsString("refresh_token=")))
+                .andExpect(header().string("Set-Cookie", Matchers.containsString("HttpOnly")));
     }
 
   
