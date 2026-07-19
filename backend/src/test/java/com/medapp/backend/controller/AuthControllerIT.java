@@ -12,7 +12,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medapp.backend.dto.LoginRequest;
-import com.medapp.backend.dto.RefreshTokenRequest;
 import com.medapp.backend.dto.RegisterRequest;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.model.User;
@@ -199,15 +198,15 @@ public class AuthControllerIT {
                 .andExpect(jsonPath("$.accessToken").exists());
     }
 
-    @Test
+  
+  @Test
     void refreshToken_retourne401_siRefreshTokenInvalide() throws Exception {
         // Given
-        RefreshTokenRequest refreshRequest = new RefreshTokenRequest("token-invalide-ou-corrompu");
+        Cookie cookieInvalide = new Cookie("refresh_token", "token-invalide-ou-corrompu");
 
         // When / Then
         mockMvc.perform(post("/api/auth/refresh-token")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(refreshRequest)))
+                        .cookie(cookieInvalide))
                 .andExpect(status().isUnauthorized());
     }
 

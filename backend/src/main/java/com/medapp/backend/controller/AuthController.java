@@ -11,7 +11,6 @@ import com.medapp.backend.exception.IdentifiantsInvalidesException;
 import com.medapp.backend.model.User;
 import com.medapp.backend.service.AuthService;
 import com.medapp.backend.dto.LoginResult;
-import com.medapp.backend.dto.RefreshTokenRequest;
 
 import jakarta.validation.Valid;
 
