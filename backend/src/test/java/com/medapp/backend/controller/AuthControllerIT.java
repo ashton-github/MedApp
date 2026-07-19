@@ -213,4 +213,12 @@ public class AuthControllerIT {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void logout_retourne204_etEffaceLeCookieRefreshToken() throws Exception {
+        // When / Then
+        mockMvc.perform(post("/api/auth/logout"))
+                .andExpect(status().isNoContent())
+                .andExpect(cookie().maxAge("refresh_token", 0));
+    }
+
 }

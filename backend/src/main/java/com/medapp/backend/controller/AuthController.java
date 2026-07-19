@@ -90,6 +90,24 @@ public class AuthController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshedCookie.toString())
                 .body(response);
+
+    }
+
+
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        ResponseCookie expiredCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(false) // à passer à true en production
+                .sameSite("Strict")
+                .path("/api/auth")
+                .maxAge(0)
+                .build();
+
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
+                .build();
     }
     
     
