@@ -75,7 +75,7 @@ public class AuthService {
             throw new CompteDesactiveException();
         }
         String newAccessToken = jwtService.generateAccessToken(user);
-        return new LoginResult(newAccessToken , refreshToken , user.getRole()); // non rotation pour le moment a discutee 
+        return new LoginResult(newAccessToken , refreshToken , user.getRole()); //* */
     }
     
 }
