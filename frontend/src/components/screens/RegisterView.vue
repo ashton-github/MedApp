@@ -9,23 +9,34 @@ import {
   Lock,
   Loader2,
   Check,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle,
+  Eye,
+  EyeOff
 } from 'lucide-vue-next'
 import { cn } from '../../lib/utils.js'
+import { useAuthStore } from '../../stores/authStore.js'
 
 const emit = defineEmits(['backToLogin'])
+const authStore = useAuthStore()
 
 const loading = ref(false)
 const regDone = ref(false)
 const submitted = ref(false)
-const reg = ref({ firstName: '', lastName: '', email: '', role: 'doctor', password: '', confirm: '' })
+const serverError = ref('')
+const showPassword = ref(false)
+const showConfirm = ref(false)
+const reg = ref({ firstName: '', lastName: '', email: '', role: 'medecin', password: '', confirm: '' })
 const updReg = (k, v) => { reg.value = { ...reg.value, [k]: v } }
 
 const REG_ROLES = [
-  { v: 'doctor', label: 'Médecin', icon: Stethoscope },
-  { v: 'secretary', label: 'Secrétaire', icon: ClipboardList },
+  { v: 'medecin', label: 'Médecin', icon: Stethoscope },
+  { v: 'secretaire', label: 'Secrétaire', icon: ClipboardList },
   { v: 'admin', label: 'Administrateur', icon: Shield }
 ]
+
+// Password regex aligned exactly with backend: ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
 
 const errors = computed(() => {
   const e = {}
@@ -38,8 +49,8 @@ const errors = computed(() => {
   }
   if (!reg.value.password) {
     e.password = 'Le mot de passe est requis.'
-  } else if (reg.value.password.length < 6) {
-    e.password = 'Le mot de passe doit contenir au moins 6 caractères.'
+  } else if (!PASSWORD_REGEX.test(reg.value.password)) {
+    e.password = 'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre.'
   }
   if (!reg.value.confirm) {
     e.confirm = 'Veuillez confirmer le mot de passe.'
@@ -51,15 +62,36 @@ const errors = computed(() => {
 
 const isFormValid = computed(() => Object.keys(errors.value).length === 0)
 
-const submitRegister = (e) => {
+const submitRegister = async (e) => {
   e.preventDefault()
   submitted.value = true
   if (!isFormValid.value) return
+
   loading.value = true
-  setTimeout(() => {
-    loading.value = false
+  serverError.value = ''
+
+  try {
+    await authStore.register({
+      firstName: reg.value.firstName,
+      lastName: reg.value.lastName,
+      email: reg.value.email,
+      password: reg.value.password,
+      role: reg.value.role
+    })
     regDone.value = true
-  }, 1400)
+  } catch (err) {
+    const msg = err.response?.data?.message
+    const status = err.response?.status
+    if (status === 409) {
+      serverError.value = msg || 'Cette adresse email est déjà utilisée.'
+    } else if (status === 400) {
+      serverError.value = msg || 'Les données saisies sont invalides.'
+    } else {
+      serverError.value = 'Une erreur est survenue. Veuillez réessayer.'
+    }
+  } finally {
+    loading.value = false
+  }
 }
 
 const backToLogin = () => {
@@ -91,6 +123,12 @@ const backToLogin = () => {
     </div>
     <h2 class="text-2xl font-bold text-foreground mb-1">Créer un compte</h2>
     <p class="text-muted-foreground text-sm mb-6">Demandez un accès professionnel MedApp</p>
+
+    <!-- Server error banner -->
+    <div v-if="serverError" class="flex items-start gap-2 p-3 mb-2 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900">
+      <AlertCircle class="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+      <p class="text-xs text-red-600 dark:text-red-400">{{ serverError }}</p>
+    </div>
 
     <form @submit.prevent="submitRegister" class="space-y-4">
       <div class="grid grid-cols-2 gap-3">
@@ -136,7 +174,24 @@ const backToLogin = () => {
         <label class="text-sm font-medium text-foreground">Mot de passe *</label>
         <div :class="cn('relative flex items-center rounded-xl border bg-background focus-within:ring-2 focus-within:ring-blue-500/20 transition-all', submitted && errors.password ? 'border-red-500 focus-within:border-red-500' : 'border-border focus-within:border-blue-500')">
           <Lock class="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none" />
-          <input type="password" :value="reg.password" @input="updReg('password', $event.target.value)" placeholder="••••••••" class="w-full h-10 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none pl-9 pr-3" />
+          <input
+            id="reg-password"
+            :type="showPassword ? 'text' : 'password'"
+            :value="reg.password"
+            @input="updReg('password', $event.target.value)"
+            placeholder="••••••••"
+            class="w-full h-10 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none pl-9 pr-10"
+          />
+          <button
+            id="reg-toggle-password"
+            type="button"
+            @click="showPassword = !showPassword"
+            class="absolute right-3 text-muted-foreground hover:text-foreground transition-colors"
+            :aria-label="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+          >
+            <EyeOff v-if="showPassword" class="w-4 h-4" />
+            <Eye v-else class="w-4 h-4" />
+          </button>
         </div>
         <p v-if="submitted && errors.password" class="text-xs text-red-500 mt-0.5">{{ errors.password }}</p>
       </div>
@@ -145,7 +200,24 @@ const backToLogin = () => {
         <label class="text-sm font-medium text-foreground">Confirmer le mot de passe *</label>
         <div :class="cn('relative flex items-center rounded-xl border bg-background focus-within:ring-2 focus-within:ring-blue-500/20 transition-all', submitted && errors.confirm ? 'border-red-500 focus-within:border-red-500' : 'border-border focus-within:border-blue-500')">
           <Lock class="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none" />
-          <input type="password" :value="reg.confirm" @input="updReg('confirm', $event.target.value)" placeholder="••••••••" class="w-full h-10 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none pl-9 pr-3" />
+          <input
+            id="reg-confirm-password"
+            :type="showConfirm ? 'text' : 'password'"
+            :value="reg.confirm"
+            @input="updReg('confirm', $event.target.value)"
+            placeholder="••••••••"
+            class="w-full h-10 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none pl-9 pr-10"
+          />
+          <button
+            id="reg-toggle-confirm"
+            type="button"
+            @click="showConfirm = !showConfirm"
+            class="absolute right-3 text-muted-foreground hover:text-foreground transition-colors"
+            :aria-label="showConfirm ? 'Masquer la confirmation' : 'Afficher la confirmation'"
+          >
+            <EyeOff v-if="showConfirm" class="w-4 h-4" />
+            <Eye v-else class="w-4 h-4" />
+          </button>
         </div>
         <p v-if="submitted && errors.confirm" class="text-xs text-red-500 mt-0.5">{{ errors.confirm }}</p>
       </div>

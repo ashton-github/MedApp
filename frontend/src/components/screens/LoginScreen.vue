@@ -8,33 +8,34 @@ import {
   Mail,
   Lock,
   ArrowRight,
-  ChevronLeft,
   ClipboardList,
   Shield,
   Loader2,
-  Check,
   AlertCircle,
-  MapPin
+  Eye,
+  EyeOff
 } from 'lucide-vue-next'
-import { useMedAppState } from '../../composables/useMedAppState.js'
 import { cn } from '../../lib/utils.js'
 import RegisterView from './RegisterView.vue'
+import { useAuthStore } from '../../stores/authStore.js'
 
-const { signIn } = useMedAppState()
+const authStore = useAuthStore()
 
-// login state
+// view state
 const view = ref('login') // 'login' | 'register'
-const role = ref('doctor')
-const email = ref('dr.martin@medapp.fr')
+const role = ref('medecin')
+const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const success = ref(false)
 const errs = ref({})
+const serverError = ref('')
+const showPassword = ref(false)
 
 const ROLES = [
-  { v: 'doctor', label: 'Médecin', icon: Stethoscope, demo: 'dr.martin@medapp.fr', name: 'Dr. Martin' },
-  { v: 'secretary', label: 'Secrétaire', icon: ClipboardList, demo: 'sec.dupont@medapp.fr', name: 'Marie Dupont' },
-  { v: 'admin', label: 'Admin', icon: Shield, demo: 'admin@medapp.fr', name: 'Admin Principal' }
+  { v: 'medecin', label: 'Médecin', icon: Stethoscope },
+  { v: 'secretaire', label: 'Secrétaire', icon: ClipboardList },
+  { v: 'admin', label: 'Admin', icon: Shield }
 ]
 
 const validate = () => {
@@ -45,18 +46,31 @@ const validate = () => {
   return e
 }
 
-const submit = (e) => {
+const submit = async (e) => {
   e.preventDefault()
   const e2 = validate()
   if (Object.keys(e2).length) { errs.value = e2; return }
   errs.value = {}
+  serverError.value = ''
   loading.value = true
-  setTimeout(() => {
-    loading.value = false
+
+  try {
+    await authStore.login(email.value, password.value)
     success.value = true
-    const r = ROLES.find(r => r.v === role.value)
-    setTimeout(() => { signIn({ name: r.name, role: r.v, email: r.demo }) }, 1200)
-  }, 1400)
+    // Navigation is handled inside authStore.login() via useMedAppState.signIn()
+  } catch (err) {
+    const msg = err.response?.data?.message
+    const status = err.response?.status
+    if (status === 401) {
+      serverError.value = msg || 'Email ou mot de passe incorrect.'
+    } else if (status === 403) {
+      serverError.value = msg || 'Ce compte est désactivé. Contactez un administrateur.'
+    } else {
+      serverError.value = 'Une erreur est survenue. Veuillez réessayer.'
+    }
+  } finally {
+    loading.value = false
+  }
 }
 
 const goToRegister = () => { view.value = 'register' }
@@ -156,20 +170,12 @@ const backToLogin = () => { view.value = 'login' }
             <p class="text-muted-foreground text-sm mt-1">Accédez à votre espace professionnel</p>
           </div>
 
-          <div class="flex gap-1.5 p-1 bg-muted rounded-xl mb-6">
-            <button
-              v-for="r in ROLES"
-              :key="r.v"
-              type="button"
-              @click="role = r.v; email = r.demo"
-              :class="cn('flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all duration-200', role === r.v ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')"
-            >
-              <component :is="r.icon" :class="cn('w-3.5 h-3.5', role === r.v ? 'text-blue-600' : '')" />
-              {{ r.label }}
-            </button>
-          </div>
-
           <form @submit.prevent="submit" class="space-y-4">
+            <!-- Server error banner -->
+            <div v-if="serverError" class="flex items-start gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900">
+              <AlertCircle class="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+              <p class="text-xs text-red-600 dark:text-red-400">{{ serverError }}</p>
+            </div>
             <div class="space-y-1.5">
               <label class="text-sm font-medium text-foreground">Email professionnel</label>
               <div :class="cn('relative flex items-center rounded-xl border bg-background transition-all duration-200', errs.email ? 'border-red-400 ring-2 ring-red-400/20' : 'border-border focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20')">
@@ -183,7 +189,23 @@ const backToLogin = () => { view.value = 'login' }
               <label class="text-sm font-medium text-foreground">Mot de passe</label>
               <div :class="cn('relative flex items-center rounded-xl border bg-background transition-all duration-200', errs.password ? 'border-red-400 ring-2 ring-red-400/20' : 'border-border focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20')">
                 <Lock class="absolute left-3 w-4 h-4 text-muted-foreground pointer-events-none" />
-                <input type="password" v-model="password" placeholder="••••••••" class="w-full h-10 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none pl-9 pr-3" />
+                <input
+                  id="login-password"
+                  :type="showPassword ? 'text' : 'password'"
+                  v-model="password"
+                  placeholder="••••••••"
+                  class="w-full h-10 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none pl-9 pr-10"
+                />
+                <button
+                  id="login-toggle-password"
+                  type="button"
+                  @click="showPassword = !showPassword"
+                  class="absolute right-3 text-muted-foreground hover:text-foreground transition-colors"
+                  :aria-label="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+                >
+                  <EyeOff v-if="showPassword" class="w-4 h-4" />
+                  <Eye v-else class="w-4 h-4" />
+                </button>
               </div>
               <p v-if="errs.password" class="text-xs text-red-500 flex items-center gap-1"><AlertCircle class="w-3 h-3" />{{ errs.password }}</p>
             </div>
@@ -192,7 +214,7 @@ const backToLogin = () => { view.value = 'login' }
               <button type="button" class="text-xs text-blue-600 hover:text-blue-700 font-medium">Mot de passe oublié ?</button>
             </div>
 
-            <button type="submit" :disabled="loading" class="w-full inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 px-5 py-2.5 text-base gap-2">
+            <button id="login-submit" type="submit" :disabled="loading" class="w-full inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 px-5 py-2.5 text-base gap-2">
               <template v-if="loading"><Loader2 class="w-4 h-4 animate-spin" />Connexion…</template>
               <template v-else><ArrowRight class="w-4 h-4" />Se connecter</template>
             </button>
@@ -202,11 +224,6 @@ const backToLogin = () => { view.value = 'login' }
             Pas encore de compte ?
             <button type="button" @click="goToRegister" class="text-blue-600 font-semibold hover:underline ml-1">Créer un compte</button>
           </p>
-
-          <div class="mt-5 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-900">
-            <p class="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-0.5">Mode démo</p>
-            <p class="text-xs text-blue-600/70 dark:text-blue-400/70">Email auto-rempli · n'importe quel mot de passe</p>
-          </div>
         </template>
 
         <!-- REGISTER FORM -->
