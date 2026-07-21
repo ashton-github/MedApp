@@ -66,7 +66,7 @@ const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.l
         <h1 class="text-2xl font-bold text-foreground">Ordonnances</h1>
         <p class="text-muted-foreground text-sm mt-0.5">{{ PRESCRIPTIONS.length }} ordonnances au total</p>
       </div>
-      <button v-if="authUser?.role === 'doctor'" @click="openNewOrdonnance" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
+      <button v-if="authUser?.role === 'medecin'" @click="openNewOrdonnance" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
         <Plus class="w-4 h-4" /> Nouvelle ordonnance
       </button>
     </div>

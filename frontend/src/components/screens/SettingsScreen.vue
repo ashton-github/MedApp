@@ -31,11 +31,11 @@ const pf = ref({
   lastName: authUser.value?.name?.split(' ')[0] || 'Dr.',
   email: authUser.value?.email || 'dr.martin@medapp.fr',
   phone: '+33 6 12 34 56 78',
-  specialty: authUser.value?.role === 'doctor' ? 'Médecine générale' : authUser.value?.role === 'secretary' ? 'Secrétariat médical' : 'Administration',
-  rpps: authUser.value?.role === 'doctor' ? '10004589231' : '',
+  specialty: authUser.value?.role === 'medecin' ? 'Médecine générale' : authUser.value?.role === 'secretaire' ? 'Secrétariat médical' : 'Administration',
+  rpps: authUser.value?.role === 'medecin' ? '10004589231' : '',
 })
 
-const isDoctor = computed(() => authUser.value?.role === 'doctor')
+const isDoctor = computed(() => authUser.value?.role === 'medecin')
 
 const PREFS = [
   "Notifications email",

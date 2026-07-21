@@ -17,7 +17,7 @@ import { cn } from '../../lib/utils.js'
 
 const { authUser, showScreen } = useMedAppState()
 
-const isDoc = authUser.value?.role === 'doctor'
+const isDoc = authUser.value?.role === 'medecin'
 const tab = ref('overview')
 
 // Dummy patient data matching the React app

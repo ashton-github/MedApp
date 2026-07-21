@@ -16,13 +16,13 @@ import {
 import { cn } from '../../lib/utils.js'
 
 const INIT_REQUESTS = [
-  { id: "req1", firstName: "Isabelle", lastName: "Dupont",   email: "i.dupont@clinique-paris.fr",    role: "doctor",    specialty: "Cardiologie",           requestedAt: "2026-07-12", status: "pending" },
-  { id: "req2", firstName: "Paul",     lastName: "Bernard",  email: "p.bernard@hopital-lyon.fr",     role: "doctor",    specialty: "Médecine générale",      requestedAt: "2026-07-11", status: "pending" },
-  { id: "req3", firstName: "Léa",      lastName: "Simon",    email: "l.simon@cabinet-renard.fr",     role: "secretary", specialty: "Cabinet Dr. Renard",     requestedAt: "2026-07-10", status: "pending" },
-  { id: "req4", firstName: "Antoine",  lastName: "Leroy",    email: "a.leroy@chu-bordeaux.fr",       role: "doctor",    specialty: "Pédiatrie",              requestedAt: "2026-07-08", status: "approved" },
-  { id: "req5", firstName: "Camille",  lastName: "Roux",     email: "c.roux@clinique-nord.fr",       role: "secretary", specialty: "Clinique du Parc",       requestedAt: "2026-07-07", status: "rejected", comment: "Informations incomplètes" },
-  { id: "req6", firstName: "Hugo",     lastName: "Marchand", email: "h.marchand@medecine-douce.fr",  role: "doctor",    specialty: "Médecine du sport",      requestedAt: "2026-07-06", status: "approved" },
-  { id: "req7", firstName: "Nadia",    lastName: "Ferreira", email: "n.ferreira@hopital-est.fr",     role: "secretary", specialty: "Service de cardiologie", requestedAt: "2026-07-05", status: "pending" },
+  { id: "req1", firstName: "Isabelle", lastName: "Dupont",   email: "i.dupont@clinique-paris.fr",    role: "medecin",    specialty: "Cardiologie",           requestedAt: "2026-07-12", status: "pending" },
+  { id: "req2", firstName: "Paul",     lastName: "Bernard",  email: "p.bernard@hopital-lyon.fr",     role: "medecin",    specialty: "Médecine générale",      requestedAt: "2026-07-11", status: "pending" },
+  { id: "req3", firstName: "Léa",      lastName: "Simon",    email: "l.simon@cabinet-renard.fr",     role: "secretaire", specialty: "Cabinet Dr. Renard",     requestedAt: "2026-07-10", status: "pending" },
+  { id: "req4", firstName: "Antoine",  lastName: "Leroy",    email: "a.leroy@chu-bordeaux.fr",       role: "medecin",    specialty: "Pédiatrie",              requestedAt: "2026-07-08", status: "approved" },
+  { id: "req5", firstName: "Camille",  lastName: "Roux",     email: "c.roux@clinique-nord.fr",       role: "secretaire", specialty: "Clinique du Parc",       requestedAt: "2026-07-07", status: "rejected", comment: "Informations incomplètes" },
+  { id: "req6", firstName: "Hugo",     lastName: "Marchand", email: "h.marchand@medecine-douce.fr",  role: "medecin",    specialty: "Médecine du sport",      requestedAt: "2026-07-06", status: "approved" },
+  { id: "req7", firstName: "Nadia",    lastName: "Ferreira", email: "n.ferreira@hopital-est.fr",     role: "secretaire", specialty: "Service de cardiologie", requestedAt: "2026-07-05", status: "pending" },
 ]
 
 const requests = ref(INIT_REQUESTS)
@@ -35,12 +35,12 @@ const toastMsg = ref(null)
 const toastType = ref(null)
 
 const ROLE_CLS = {
-  doctor:    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800",
-  secretary: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/40 dark:text-violet-300 dark:border-violet-800",
+  medecin:    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800",
+  secretaire: "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/40 dark:text-violet-300 dark:border-violet-800",
   admin:     "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-800",
 }
-const ROLE_LABEL = { doctor: "Médecin", secretary: "Secrétaire", admin: "Administrateur" }
-const ROLE_ICON = { doctor: Stethoscope, secretary: ClipboardList, admin: Shield }
+const ROLE_LABEL = { medecin: "Médecin", secretaire: "Secrétaire", admin: "Administrateur" }
+const ROLE_ICON = { medecin: Stethoscope, secretaire: ClipboardList, admin: Shield }
 
 const statusConfig = {
   pending:  { label: "En attente", cls: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800", dot: "bg-amber-500" },
