@@ -9,4 +9,5 @@ import com.medapp.backend.model.Patient;
 public interface PatientRepository extends MongoRepository<Patient , String> {
 
     List<Patient> findByNomContainingIgnoreCase(String nom);    
+    List<Patient> findByPrenomContainingIgnoreCase(String prenom);
 } 

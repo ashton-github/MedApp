@@ -50,6 +50,19 @@ public class PatientRepositoryTest {
         assertEquals(1, resultats.size());
         assertEquals("Dupont", resultats.get(0).getNom());
     }
+
+      @Test
+    void recherche_retournePatient_dontLePrenomContientLaRequete_insensibleALaCasse() {
+        Patient patient = new Patient("Martin", "Sophie", LocalDate.of(1985, 3, 20), Sexe.F,
+                "98765432", "5 avenue Habib Bourguiba", "1850320654321",
+                List.of(), null, LocalDateTime.now(), null);
+        patientRepository.save(patient);
+
+        List<Patient> resultats = patientRepository.findByPrenomContainingIgnoreCase("soph");
+
+        assertEquals(1, resultats.size());
+        assertEquals("Sophie", resultats.get(0).getPrenom());
+    }
     
     
 }
