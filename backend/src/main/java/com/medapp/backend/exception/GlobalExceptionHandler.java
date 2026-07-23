@@ -27,8 +27,15 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(CompteDesactiveException.class)
-    public ResponseEntity<Map<String , String>> handleCompteDesactivve(CompteDesactiveException ex){
+    public ResponseEntity<Map<String , String>> handleCompteDesactive(CompteDesactiveException ex){
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message" , ex.getMessage()));
+    }
+
+
+
+    @ExceptionHandler(NumeroSecuriteSocialeDejaExistantException.class)
+    public ResponseEntity<Map<String , String>> handleNumeroSecuriteSocialeDejaExistant(NumeroSecuriteSocialeDejaExistantException ex){
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message" , ex.getMessage()));
     }
     
 
