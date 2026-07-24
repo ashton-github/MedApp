@@ -53,4 +53,21 @@ public class PatientService {
     public Patient obtenirPatient(String id){
         return patientRepository.findById(id).orElseThrow(() -> new PatientIntrouvableException(id));
     }
+
+    public Patient modifierPatient(String id , Patient patientModifie) {
+        Patient patientExistant = patientRepository.findById(id).orElseThrow(() -> new PatientIntrouvableException(id));
+
+        patientExistant.setNom(patientModifie.getNom());
+        patientExistant.setDateNaissance(patientModifie.getDateNaissance());
+        patientExistant.setSexe(patientModifie.getSexe());
+        patientExistant.setTelephone(patientModifie.getTelephone());
+        patientExistant.setAdresse(patientModifie.getAdresse());
+        patientExistant.setNumeroSecuriteSociale(patientModifie.getNumeroSecuriteSociale());
+        patientExistant.setAntecedents(patientModifie.getAntecedents());
+        patientExistant.setMedecinReferent(patientModifie.getMedecinReferent());
+        patientExistant.setDateMiseAJour(LocalDateTime.now());
+        
+        return patientRepository.save(patientExistant);
+        
+    }
 }

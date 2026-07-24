@@ -113,5 +113,30 @@ public class PatientServiceTest {
         assertThrows(PatientIntrouvableException.class, () -> 
             patientService.obtenirPatient(idInexistant));
     }
+
+    @Test
+    void modifierPatient_metAJourDateMiseAJour_siDonneesValides(){
+        String id = "patient-existant-id";
+        Patient patientExistant = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+                "12345678", "12 rue de la Paix", "1900512123459",
+                List.of(), null, null, null);
+        patientExistant.setId(id);
+
+        Patient patientModifie = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+                "99999999", "12 rue de la Paix", "1900512123459",
+                List.of(), null, null, null);
+
+        when(patientRepository.findById(id)).thenReturn(Optional.of(patientExistant));
+        when(patientRepository.save(any(Patient.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Patient resultat = patientService.modifierPatient(id , patientModifie);
+
+        assertEquals("99999999", resultat.getTelephone());
+        assertNotNull(resultat.getDateMiseAJour());
+
+    }
+
+
+    
     
 }
