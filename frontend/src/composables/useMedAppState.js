@@ -9,15 +9,7 @@ const authForm = ref({
   password: ''
 })
 
-const patientDraft = ref({
-  nom: '',
-  prenom: '',
-  naissance: '',
-  telephone: '',
-  adresse: '',
-  antecedents: '',
-  mutuelle: ''
-})
+const patientToEdit = ref(null)
 
 const prescriptionDraft = ref({
   patient: '',
@@ -50,12 +42,13 @@ export function useMedAppState() {
     showScreen(screens.login)
   }
 
-  const editPatient = () => {
+  const editPatient = (patient) => {
+    patientToEdit.value = patient
     showScreen(screens.patientForm)
   }
 
   const openNewPatient = () => {
-    patientDraft.value = { nom: '', prenom: '', naissance: '', telephone: '', adresse: '', antecedents: '', mutuelle: '' }
+    patientToEdit.value = null
     showScreen(screens.patientForm)
   }
 
@@ -68,7 +61,7 @@ export function useMedAppState() {
     currentScreen,
     authUser,
     authForm,
-    patientDraft,
+    patientToEdit,
     prescriptionDraft,
     showScreen,
     signIn,

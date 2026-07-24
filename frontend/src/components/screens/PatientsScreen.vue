@@ -10,34 +10,48 @@ import {
   Eye,
   Pencil,
   Phone,
-  Mail
+  Mail,
+  Trash2
 } from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
 
-const { openNewPatient, showScreen } = useMedAppState()
+const { openNewPatient, showScreen, editPatient } = useMedAppState()
 
 const view = ref('grid')
 const q = ref('')
 const loading = ref(false)
 
 // We use the same mock data logic as React
-const PATIENTS = [
+const PATIENTS = ref([
   { id: "p1", firstName: "Sophie", lastName: "Laurent", dob: "1985-03-15", gender: "F", phone: "+33 6 12 34 56 78", email: "sophie.laurent@email.fr", insurance: "CPAM Paris", lastVisit: "2026-07-08", status: "active", bloodType: "A+", allergies: ["Pénicilline"] },
   { id: "p2", firstName: "Marc", lastName: "Dubois", dob: "1972-11-22", gender: "M", phone: "+33 6 98 76 54 32", email: "marc.dubois@email.fr", insurance: "Mutuelle AG2R", lastVisit: "2026-07-05", status: "active", bloodType: "O+", allergies: [] },
   { id: "p3", firstName: "Amira", lastName: "Benali", dob: "1990-07-04", gender: "F", phone: "+33 7 45 23 11 89", email: "amira.benali@email.fr", insurance: "CPAM Lyon", lastVisit: "2026-06-28", status: "active", bloodType: "B+", allergies: ["Aspirine"] },
   { id: "p4", firstName: "Théo", lastName: "Moreau", dob: "2001-02-28", gender: "M", phone: "+33 6 33 44 55 66", email: "theo.moreau@email.fr", insurance: "CPAM Bordeaux", lastVisit: "2026-07-01", status: "inactive", bloodType: "AB-", allergies: [] },
   { id: "p5", firstName: "Claire", lastName: "Fontaine", dob: "1965-09-10", gender: "F", phone: "+33 6 77 88 99 00", email: "claire.fontaine@email.fr", insurance: "MGEN", lastVisit: "2026-07-09", status: "active", bloodType: "A-", allergies: ["Latex"] },
   { id: "p6", firstName: "Lucas", lastName: "Petit", dob: "1995-12-01", gender: "M", phone: "+33 7 11 22 33 44", email: "lucas.petit@email.fr", insurance: "CPAM Nantes", lastVisit: "2026-06-15", status: "active", bloodType: "O-", allergies: [] },
-]
+])
 
 const list = computed(() => {
-  return PATIENTS.filter(p =>
+  return PATIENTS.value.filter(p =>
     `${p.firstName} ${p.lastName}`.toLowerCase().includes(q.value.toLowerCase()) ||
     p.email.toLowerCase().includes(q.value.toLowerCase())
   )
 })
+
+const patientToDelete = ref(null)
+
+const confirmDelete = (id) => {
+  patientToDelete.value = id
+}
+
+const deletePatient = () => {
+  if (patientToDelete.value) {
+    PATIENTS.value = PATIENTS.value.filter(p => p.id !== patientToDelete.value)
+    patientToDelete.value = null
+  }
+}
 
 const AVATAR_COLORS = [
   "bg-blue-100 text-blue-700", "bg-emerald-100 text-emerald-700",
@@ -116,7 +130,15 @@ const fmt = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", mon
             </div>
             <div class="mt-3 pt-3 border-t border-border flex items-center justify-between">
               <span class="text-xs text-muted-foreground">Dernière visite</span>
-              <span class="text-xs font-semibold text-foreground">{{ fmt(p.lastVisit) }}</span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-foreground">{{ fmt(p.lastVisit) }}</span>
+                <button @click.stop="editPatient(p)" class="p-1 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors" title="Modifier">
+                  <Pencil class="w-3.5 h-3.5" />
+                </button>
+                <button @click.stop="confirmDelete(p.id)" class="p-1 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors" title="Supprimer">
+                  <Trash2 class="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -155,7 +177,8 @@ const fmt = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", mon
               <td class="px-4 py-3">
                 <div class="flex gap-1">
                   <button class="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"><Eye class="w-3.5 h-3.5" /></button>
-                  <button class="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"><Pencil class="w-3.5 h-3.5" /></button>
+                  <button @click.stop="editPatient(p)" class="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"><Pencil class="w-3.5 h-3.5" /></button>
+                  <button @click.stop="confirmDelete(p.id)" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors" title="Supprimer"><Trash2 class="w-3.5 h-3.5" /></button>
                 </div>
               </td>
             </tr>
@@ -167,5 +190,21 @@ const fmt = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", mon
     <button @click="openNewPatient" class="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center hover:bg-blue-700 transition-all active:scale-95 lg:hidden">
       <Plus class="w-6 h-6" />
     </button>
+    
+    <div v-if="patientToDelete" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+      <div v-motion :initial="{ opacity: 0, scale: 0.95 }" :enter="{ opacity: 1, scale: 1, transition: { duration: 150 } }" class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+            <Trash2 class="w-5 h-5 text-red-600 dark:text-red-500" />
+          </div>
+          <h2 class="text-lg font-semibold text-foreground">Supprimer le patient</h2>
+        </div>
+        <p class="text-sm text-muted-foreground mb-6">Êtes-vous sûr de vouloir supprimer ce patient ? Cette action est irréversible et supprimera toutes les données associées.</p>
+        <div class="flex justify-end gap-3">
+          <button @click="patientToDelete = null" class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-4 py-2 text-sm">Annuler</button>
+          <button @click="deletePatient" class="bg-red-600 text-white hover:bg-red-700 shadow-sm shadow-red-200/50 dark:shadow-red-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 px-4 py-2 text-sm">Supprimer</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

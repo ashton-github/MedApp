@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import {
   ChevronLeft,
   ChevronRight,
@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Loader2,
   Phone,
-  Mail,
   MapPin,
   Shield
 } from 'lucide-vue-next'
@@ -15,24 +14,29 @@ import { useMedAppState } from '../../composables/useMedAppState.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
 
-const { showScreen } = useMedAppState()
+const { showScreen, patientToEdit } = useMedAppState()
+
+const isEditMode = computed(() => !!patientToEdit.value)
 
 const step = ref(1)
 const submitting = ref(false)
 const done = ref(false)
 
 const form = ref({
-  firstName: '',
-  lastName: '',
-  dob: '',
-  gender: '',
-  phone: '',
-  email: '',
-  address: '',
-  insurance: '',
-  allergies: '',
-  notes: ''
+  firstName: patientToEdit.value?.firstName || '',
+  lastName: patientToEdit.value?.lastName || '',
+  dob: patientToEdit.value?.dob || '',
+  gender: patientToEdit.value?.gender || '',
+  phone: patientToEdit.value?.phone || '',
+  address: patientToEdit.value?.address || '',
+  numeroSecuriteSociale: patientToEdit.value?.numeroSecuriteSociale || '',
+  medecinReferent: patientToEdit.value?.medecinReferent || '',
+  antecedents: patientToEdit.value?.antecedents || (patientToEdit.value?.allergies?.length ? patientToEdit.value.allergies.join(', ') : '')
 })
+
+const goBack = () => {
+  showScreen(isEditMode.value ? screens.patientDetail : screens.patients)
+}
 
 const STEPS = [
   { n: 1, label: "Identité" },
@@ -46,7 +50,7 @@ const submit = () => {
     submitting.value = false
     done.value = true
     setTimeout(() => {
-      showScreen(screens.patients)
+      goBack()
     }, 1400)
   }, 1400)
 }
@@ -59,18 +63,18 @@ const submit = () => {
     >
       <CheckCircle2 class="w-10 h-10 text-emerald-600" />
     </div>
-    <h2 class="text-xl font-bold text-foreground">Patient créé !</h2>
-    <p class="text-muted-foreground text-sm mt-1">Redirection vers la liste…</p>
+    <h2 class="text-xl font-bold text-foreground">{{ isEditMode ? 'Patient mis à jour !' : 'Patient créé !' }}</h2>
+    <p class="text-muted-foreground text-sm mt-1">Redirection…</p>
   </div>
 
   <div v-else class="p-6 max-w-2xl mx-auto space-y-6">
     <div>
       <div class="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-        <button @click="showScreen(screens.patients)" class="hover:text-foreground">Patients</button>
+        <button @click="goBack" class="hover:text-foreground">{{ isEditMode ? 'Détails du patient' : 'Patients' }}</button>
         <ChevronRight class="w-3 h-3" />
-        <span class="text-foreground">Nouveau patient</span>
+        <span class="text-foreground">{{ isEditMode ? 'Modifier le patient' : 'Nouveau patient' }}</span>
       </div>
-      <h1 class="text-2xl font-bold text-foreground">Nouveau patient</h1>
+      <h1 class="text-2xl font-bold text-foreground">{{ isEditMode ? 'Modifier le patient' : 'Nouveau patient' }}</h1>
     </div>
 
     <div class="flex items-center gap-0">
@@ -140,13 +144,6 @@ const submit = () => {
               </div>
             </div>
             <div class="space-y-1.5">
-              <label class="text-sm font-medium text-foreground">Email</label>
-              <div class="relative">
-                <Mail class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type="email" v-model="form.email" placeholder="patient@email.fr" class="w-full h-10 pl-9 pr-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
-              </div>
-            </div>
-            <div class="space-y-1.5">
               <label class="text-sm font-medium text-foreground">Adresse</label>
               <div class="relative">
                 <MapPin class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -154,10 +151,10 @@ const submit = () => {
               </div>
             </div>
             <div class="space-y-1.5">
-              <label class="text-sm font-medium text-foreground">Assurance maladie</label>
+              <label class="text-sm font-medium text-foreground">Numéro de sécurité sociale</label>
               <div class="relative">
                 <Shield class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input v-model="form.insurance" placeholder="CPAM Paris" class="w-full h-10 pl-9 pr-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+                <input v-model="form.numeroSecuriteSociale" placeholder="1 23 45 67 890 123 45" class="w-full h-10 pl-9 pr-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
               </div>
             </div>
           </template>
@@ -165,12 +162,12 @@ const submit = () => {
           <template v-else-if="step === 3">
             <h2 class="font-semibold text-foreground">Antécédents médicaux</h2>
             <div class="space-y-1.5">
-              <label class="text-sm font-medium text-foreground">Allergies connues</label>
-              <textarea v-model="form.allergies" placeholder="Pénicilline, Aspirine…" rows="3" class="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground resize-none" />
+              <label class="text-sm font-medium text-foreground">Médecin référent (traitant)</label>
+              <input v-model="form.medecinReferent" placeholder="Dr. Martin" class="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
             </div>
             <div class="space-y-1.5">
-              <label class="text-sm font-medium text-foreground">Notes médicales</label>
-              <textarea v-model="form.notes" placeholder="Antécédents, traitements en cours…" rows="4" class="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground resize-none" />
+              <label class="text-sm font-medium text-foreground">Antécédents médicaux</label>
+              <textarea v-model="form.antecedents" placeholder="Allergies, traitements en cours, etc." rows="5" class="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground resize-none" />
             </div>
           </template>
         </div>
@@ -178,7 +175,7 @@ const submit = () => {
     </div>
 
     <div class="flex justify-between">
-      <button @click="step === 1 ? showScreen(screens.patients) : step--" class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-4 py-2 text-sm gap-2">
+      <button @click="step === 1 ? goBack() : step--" class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-4 py-2 text-sm gap-2">
         <ChevronLeft class="w-4 h-4" /> {{ step === 1 ? "Annuler" : "Précédent" }}
       </button>
       
@@ -187,10 +184,10 @@ const submit = () => {
       </button>
       <button v-else @click="submit" :disabled="submitting" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 px-4 py-2 text-sm gap-2">
         <template v-if="submitting">
-          <Loader2 class="w-4 h-4 animate-spin" /> Création…
+          <Loader2 class="w-4 h-4 animate-spin" /> {{ isEditMode ? 'Enregistrement…' : 'Création…' }}
         </template>
         <template v-else>
-          <Check class="w-4 h-4" /> Créer le patient
+          <Check class="w-4 h-4" /> {{ isEditMode ? 'Enregistrer les modifications' : 'Créer le patient' }}
         </template>
       </button>
     </div>

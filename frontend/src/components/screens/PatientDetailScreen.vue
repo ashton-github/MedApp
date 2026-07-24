@@ -9,13 +9,14 @@ import {
   Shield,
   Heart,
   Lock,
-  Activity
+  Activity,
+  Trash2
 } from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
 
-const { authUser, showScreen } = useMedAppState()
+const { authUser, showScreen, editPatient } = useMedAppState()
 
 const isDoc = authUser.value?.role === 'medecin'
 const tab = ref('overview')
@@ -44,6 +45,16 @@ const AVATAR_COLORS = [
   "bg-rose-100 text-rose-700", "bg-cyan-100 text-cyan-700",
 ]
 const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]
+
+const showDeleteModal = ref(false)
+
+const confirmDelete = () => {
+  showDeleteModal.value = true
+}
+
+const deletePatient = () => {
+  showScreen(screens.patients)
+}
 </script>
 
 <template>
@@ -72,11 +83,14 @@ const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.l
               </div>
             </div>
             <div class="flex gap-2">
-              <button class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
+              <button @click="editPatient(p)" class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
                 <Pencil class="w-4 h-4" /> Modifier
               </button>
               <button v-if="isDoc" @click="showScreen(screens.ordonnanceForm)" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
                 <Plus class="w-4 h-4" /> Ordonnance
+              </button>
+              <button class="border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-500 dark:hover:bg-red-950/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 px-3 py-1.5 text-sm gap-1.5" @click="confirmDelete">
+                <Trash2 class="w-4 h-4" /> Supprimer
               </button>
             </div>
           </div>
@@ -164,6 +178,22 @@ const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.l
           </template>
         </div>
       </transition>
+    </div>
+
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+      <div v-motion :initial="{ opacity: 0, scale: 0.95 }" :enter="{ opacity: 1, scale: 1, transition: { duration: 150 } }" class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+            <Trash2 class="w-5 h-5 text-red-600 dark:text-red-500" />
+          </div>
+          <h2 class="text-lg font-semibold text-foreground">Supprimer le patient</h2>
+        </div>
+        <p class="text-sm text-muted-foreground mb-6">Êtes-vous sûr de vouloir supprimer <strong>{{ p.firstName }} {{ p.lastName }}</strong> ? Cette action est irréversible et supprimera toutes les données associées.</p>
+        <div class="flex justify-end gap-3">
+          <button @click="showDeleteModal = false" class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-4 py-2 text-sm">Annuler</button>
+          <button @click="deletePatient" class="bg-red-600 text-white hover:bg-red-700 shadow-sm shadow-red-200/50 dark:shadow-red-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 px-4 py-2 text-sm">Supprimer</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
