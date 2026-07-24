@@ -152,5 +152,23 @@ public class PatientServiceTest {
         );
         verify(patientRepository, never()).save(any(Patient.class));
     }
+
+    @Test
+    void supprimerPatient_reussit_siPatientExiste() {
+        // given
+        String id = "patient-existant-id";
+        Patient patientExistant = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+                "12345678", "12 rue de la Paix", "1900512123460",
+                List.of(), null, null, null);
+        patientExistant.setId(id);
+
+        when(patientRepository.findById(id)).thenReturn(Optional.of(patientExistant));
+
+        // when
+        patientService.supprimerPatient(id);
+
+        // then
+        verify(patientRepository).deleteById(id);
+    }
     
 }

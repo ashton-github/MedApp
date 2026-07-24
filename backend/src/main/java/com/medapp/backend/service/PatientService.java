@@ -70,4 +70,10 @@ public class PatientService {
         return patientRepository.save(patientExistant);
         
     }
+
+    public void supprimerPatient(String id) {
+        patientRepository.findById(id)
+                .orElseThrow(() -> new PatientIntrouvableException(id));
+        patientRepository.deleteById(id);
+    }
 }
