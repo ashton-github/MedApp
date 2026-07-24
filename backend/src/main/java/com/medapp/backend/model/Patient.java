@@ -47,7 +47,7 @@ public class Patient {
         return id;
     }
 
-    public void  setId(String Id){
+    public void  setId(String id){
         this.id = id;
     }
 

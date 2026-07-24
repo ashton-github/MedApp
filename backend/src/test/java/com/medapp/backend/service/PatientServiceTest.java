@@ -83,5 +83,28 @@ public class PatientServiceTest {
 
         verify(patientRepository , never()).save(any(Patient.class));
     }
+
+    @Test
+    void rechercherPatients_retournePatientsCorrespondants_parNomOuPrenom(){
+        String requete = "dupo";
+        Patient patient1 = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+                "12345678", "12 rue de la Paix", "1900512123458",
+                List.of(), null, null, null);
+        patient1.setId("patient-1");
+        Patient patient2 = new Patient("Martin", "Dupois", LocalDate.of(1985, 1, 1), Sexe.M,
+                "87654321", "1 rue de Rome", "1850101654322",
+                List.of(), null, null, null);
+        patient2.setId("patient-2");
+
+        when(patientRepository.findByNomContainingIgnoreCase(requete)).thenReturn(List.of(patient1));
+        when(patientRepository.findByPrenomContainingIgnoreCase(requete)).thenReturn(List.of(patient2));
+
+        System.out.println("DEBUG findByNom = " + patientRepository.findByNomContainingIgnoreCase(requete));
+        System.out.println("DEBUG findByPrenom = " + patientRepository.findByPrenomContainingIgnoreCase(requete));
+
+        List<Patient> resultats = patientService.rechercherPatients(requete);
+        System.out.println("DEBUG resultats ids = " + resultats.stream().map(Patient::getId).toList());
+        assertEquals(2, resultats.size());
+    }
     
 }

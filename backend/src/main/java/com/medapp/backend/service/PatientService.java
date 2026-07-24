@@ -2,6 +2,10 @@ package com.medapp.backend.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -29,5 +33,19 @@ public class PatientService {
         }
         patient.setDateCreation(LocalDateTime.now());
         return patientRepository.save(patient);
+    }
+
+    public List<Patient> rechercherPatients(String requete) {
+        List<Patient> parNom = patientRepository.findByNomContainingIgnoreCase(requete);
+        List<Patient> parPrenom = patientRepository.findByPrenomContainingIgnoreCase(requete);
+
+        Map<String , Patient> resultats = new LinkedHashMap<>();
+        for(Patient patient:parNom){
+            resultats.put(patient.getId() , patient);
+        }
+        for(Patient patient:parPrenom){
+            resultats.put(patient.getId() , patient);
+        }
+        return new ArrayList<>(resultats.values());
     }
 }
