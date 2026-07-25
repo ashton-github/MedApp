@@ -1,5 +1,6 @@
 package com.medapp.backend.service;
 
+import com.medapp.backend.config.SecurityConfig;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -13,15 +14,18 @@ import com.medapp.backend.exception.DonneesInvalidesException;
 import com.medapp.backend.exception.NumeroSecuriteSocialeDejaExistantException;
 import com.medapp.backend.exception.PatientIntrouvableException;
 import com.medapp.backend.model.Patient;
+import com.medapp.backend.model.Role;
 import com.medapp.backend.repository.PatientRepository;
 
 @Service
 public class PatientService {
 
+    private final SecurityConfig securityConfig;
     private final PatientRepository patientRepository;
 
-    public PatientService(PatientRepository patientRepository){
+    public PatientService(PatientRepository patientRepository, SecurityConfig securityConfig){
         this.patientRepository = patientRepository;
+        this.securityConfig = securityConfig;
     }
     
     public Patient creerPatient(Patient patient){
@@ -75,5 +79,17 @@ public class PatientService {
         patientRepository.findById(id)
                 .orElseThrow(() -> new PatientIntrouvableException(id));
         patientRepository.deleteById(id);
+    }
+
+    public Patient appliquerMasquageSelonRole(Patient patient, Role role){
+
+        if(role == Role.SECRETAIRE){
+            String numero = patient.getNumeroSecuriteSociale();
+            if(numero != null && numero.length() >= 3){
+                String masque = "X".repeat(numero.length() - 3) + numero.substring(numero.length() - 3);
+                patient.setNumeroSecuriteSociale(masque);
+            }
+        }
+        return patient;
     }
 }

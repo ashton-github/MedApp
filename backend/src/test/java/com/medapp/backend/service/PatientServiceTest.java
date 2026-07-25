@@ -23,6 +23,7 @@ import com.medapp.backend.exception.DonneesInvalidesException;
 import com.medapp.backend.exception.NumeroSecuriteSocialeDejaExistantException;
 import com.medapp.backend.exception.PatientIntrouvableException;
 import com.medapp.backend.model.Patient;
+import com.medapp.backend.model.Role;
 import com.medapp.backend.model.Sexe;
 import com.medapp.backend.repository.PatientRepository;
 
@@ -180,6 +181,33 @@ public class PatientServiceTest {
         assertThrows(PatientIntrouvableException.class , () -> patientService.supprimerPatient(idInexistant) );
 
         verify(patientRepository , never()).deleteById(anyString());
+    }
+
+    @Test
+    void masquerNumeroSecuriteSociale_pourRoleSecretaire(){
+        Patient patient = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+        "12345678", "12 rue de la Paix", "1900512123456",
+        List.of(), null, null, null);
+
+        Patient result = patientService.appliquerMasquageSelonRole(patient , Role.SECRETAIRE);
+        assertEquals("XXXXXXXXXX456", result.getNumeroSecuriteSociale());
+    }
+
+    @Test 
+    void nePasMasquerNumeroSecuriteSociale_pourRoleMedecinOuAdmin(){
+       
+         Patient patientPourMedecin = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+            "12345678", "12 rue de la Paix", "1900512123456",
+            List.of(), null, null, null);
+        Patient patientPourAdmin = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+            "12345678", "12 rue de la Paix", "1900512123456",
+            List.of(), null, null, null);
+
+        Patient resultMedecin = patientService.appliquerMasquageSelonRole(patientPourMedecin , Role.MEDECIN);
+        Patient resultAdmin = patientService.appliquerMasquageSelonRole(patientPourAdmin , Role.ADMIN);
+
+        assertEquals("1900512123456", resultMedecin.getNumeroSecuriteSociale());
+        assertEquals("1900512123456", resultAdmin.getNumeroSecuriteSociale());
     }
     
 }
