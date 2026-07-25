@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
@@ -229,5 +230,30 @@ public class PatientControllerIT {
                         .header("Authorization", "Bearer " + tokenAdmin))
                 .andExpect(status().isNoContent());
 
+    }
+
+    @Test
+    void supprimerPatient_retourne403_siRoleNonAdmin() throws Exception {
+
+        String tokenMedecin = obtenirAccessToken("medecin-suppr-refuse@medapp.com", Role.MEDECIN);
+
+        PatientRequest request = new PatientRequest(
+                "Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+                "12345678", "12 rue de la Paix", "1900512100006",
+                List.of(), null
+        );
+
+        MvcResult creationResult = mockMvc.perform(post("/api/patients")
+                        .header("Authorization" , "Bearer " + tokenMedecin)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String patientId = objectMapper.readTree(creationResult.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(delete("/api/patients/" + patientId )
+                        .header("Authorization", "Bearer " + tokenMedecin))
+                .andExpect(status().isForbidden());
     }
 }
