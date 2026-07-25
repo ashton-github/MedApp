@@ -18,6 +18,7 @@ import com.medapp.backend.model.Role;
 import com.medapp.backend.model.Sexe;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -200,6 +201,33 @@ public class PatientControllerIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.telephone").value("99999999"));
 
+
+    }
+
+    @Test
+    void supprimerPatient_retourne204_siRoleAdmin()throws Exception {
+
+        String tokenAdmin = obtenirAccessToken("admin-suppr@medapp.com", Role.ADMIN);
+
+        PatientRequest request = new PatientRequest(
+                "Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+                "12345678", "12 rue de la Paix", "1900512100005",
+                List.of(), null
+        );
+
+        MvcResult creationResult = mockMvc.perform(post("/api/patients")
+                        .header("Authorization", "Bearer " + tokenAdmin)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String patientId = objectMapper.readTree(creationResult.getResponse().getContentAsString()).get("id").asText();
+
+
+        mockMvc.perform(delete("/api/patients/" + patientId)
+                        .header("Authorization", "Bearer " + tokenAdmin))
+                .andExpect(status().isNoContent());
 
     }
 }
