@@ -221,4 +221,12 @@ public class AuthControllerIT {
                 .andExpect(cookie().maxAge("refresh_token", 0));
     }
 
+    @Test
+    void accessEndpoitProtege_retourne401_siAucunToken()throws Exception {
+        mockMvc.perform(post("/api/patients")
+                        .contentType("application/json")
+                        .content("{="))
+                    .andExpect(status().isUnauthorized());
+    }
+
 }

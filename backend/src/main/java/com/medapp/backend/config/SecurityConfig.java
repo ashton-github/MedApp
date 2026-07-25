@@ -12,6 +12,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.medapp.backend.security.JwtAuthenticationFilter;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 /**
  * Configuration de sécurité MINIMALE pour permettre à l'équipe de démarrer
  * le développement (accès libre à tous les endpoints /api/**).
@@ -38,6 +40,10 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint((request , response , authException) ->
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED))
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/health" , "/actuator/**").permitAll()
