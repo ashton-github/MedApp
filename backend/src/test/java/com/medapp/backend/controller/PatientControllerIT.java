@@ -81,7 +81,6 @@ public class PatientControllerIT {
 
     @Test
     void creerPatient_retourne409_siNumeroSecuriteSocialeDejaUtilise() throws Exception {
-        // given
         String token = obtenirAccessToken("medecin-doublon@medapp.com", Role.MEDECIN);
         String numeroPartage = "1900512100001";
 
@@ -103,11 +102,30 @@ public class PatientControllerIT {
                 List.of(), null
         );
 
-        // when/then
         mockMvc.perform(post("/api/patients")
                         .header("Authorization", "Bearer " + token)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(deuxiemePatient)))
                 .andExpect(status().isConflict());
+    }
+
+
+    @Test
+    void creerPatient_retourne400_siDonneesInvalides() throws Exception {
+        // given
+        String token = obtenirAccessToken("medecin-invalide@medapp.com", Role.MEDECIN);
+
+        PatientRequest requeteInvalide = new PatientRequest(
+                "", "Marie", LocalDate.now().plusDays(1), Sexe.F,
+                "12345678", "12 rue de la Paix", "1900512100002",
+                List.of(), null
+        );
+
+        // when/then
+        mockMvc.perform(post("/api/patients")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(requeteInvalide)))
+                .andExpect(status().isBadRequest());
     }
 }
