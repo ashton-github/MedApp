@@ -157,4 +157,13 @@ public class PatientControllerIT {
 
 
     }
+
+    @Test
+    void obtenirPatient_retourne404_siIdInexistant() throws Exception {
+        String token = obtenirAccessToken("medcin-404@medapp.com",Role.MEDECIN);
+
+        mockMvc.perform(get("/api/patients/id-inexistant")
+                        .header("Authorization" , "Bearer " + token))
+                    .andExpect(status().isNotFound());
+    }
 }
