@@ -18,6 +18,7 @@ import com.medapp.backend.model.Role;
 import com.medapp.backend.model.Sexe;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -165,5 +166,40 @@ public class PatientControllerIT {
         mockMvc.perform(get("/api/patients/id-inexistant")
                         .header("Authorization" , "Bearer " + token))
                     .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void modifierPatient_retourne200_siDonneesValides() throws Exception {
+        String token = obtenirAccessToken("medcin-404@medapp.com",Role.MEDECIN);
+
+        PatientRequest requeteInitiale = new PatientRequest(
+                "Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+                "12345678", "12 rue de la Paix", "1900512100004",
+                List.of(), null
+        );
+
+        MvcResult creationResult = mockMvc.perform(post("/api/patients")
+                        .header("Authorization" , "Bearer " + token )
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(requeteInitiale)))
+                    .andExpect(status().isCreated())
+                    .andReturn();
+
+        String patientId = objectMapper.readTree(creationResult.getResponse().getContentAsString()).get("id").asText();
+
+        PatientRequest requeteModifiee = new PatientRequest(
+                "Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+                "99999999", "12 rue de la Paix", "1900512100004",
+                List.of(), null
+        );
+
+        mockMvc.perform(put("/api/patients/" + patientId)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(requeteModifiee)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.telephone").value("99999999"));
+
+
     }
 }

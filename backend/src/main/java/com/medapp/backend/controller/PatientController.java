@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PutMapping;
+
 
 
 
@@ -70,6 +72,23 @@ public class PatientController {
         Patient patient = patientService.obtenirPatient(id);
         Role role = extraireRole(authentication);
         Patient patientMasque = patientService.appliquerMasquageSelonRole(patient, role);
+
+        return ResponseEntity.ok(versResponse(patientMasque));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PatientResponse> modifierPatient(@PathVariable String id, @Valid @RequestBody PatientRequest request , Authentication authentication) {
+        
+        Patient patientModifier =  new Patient(
+                request.nom(), request.prenom(), request.dateNaissance(), request.sexe(),
+                request.telephone(), request.adresse(), request.numeroSecuriteSociale(),
+                request.antecedents(), request.medecinReferent(), null, null
+        );
+
+        Patient patientMisAJour = patientService.modifierPatient(id, patientModifier);
+
+        Role role = extraireRole(authentication);
+        Patient patientMasque = patientService.appliquerMasquageSelonRole(patientMisAJour, role);
 
         return ResponseEntity.ok(versResponse(patientMasque));
     }
