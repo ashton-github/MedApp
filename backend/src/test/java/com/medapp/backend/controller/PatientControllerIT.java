@@ -78,4 +78,36 @@ public class PatientControllerIT {
                 .andExpect(jsonPath("$.numeroSecuriteSociale").value("1900512123499"));
     }
     
+
+    @Test
+    void creerPatient_retourne409_siNumeroSecuriteSocialeDejaUtilise() throws Exception {
+        // given
+        String token = obtenirAccessToken("medecin-doublon@medapp.com", Role.MEDECIN);
+        String numeroPartage = "1900512100001";
+
+        PatientRequest premierPatient = new PatientRequest(
+                "Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+                "12345678", "12 rue de la Paix", numeroPartage,
+                List.of(), null
+        );
+
+        mockMvc.perform(post("/api/patients")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(premierPatient)))
+                .andExpect(status().isCreated());
+
+        PatientRequest deuxiemePatient = new PatientRequest(
+                "Martin", "Paul", LocalDate.of(1985, 1, 1), Sexe.M,
+                "87654321", "1 rue de Rome", numeroPartage,
+                List.of(), null
+        );
+
+        // when/then
+        mockMvc.perform(post("/api/patients")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(deuxiemePatient)))
+                .andExpect(status().isConflict());
+    }
 }
