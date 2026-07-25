@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -169,6 +170,16 @@ public class PatientServiceTest {
 
         // then
         verify(patientRepository).deleteById(id);
+    }
+
+    @Test
+    void supprimerPatient_lanceException_siIdInexistant(){
+        String idInexistant = "id-inexistant";
+        when(patientRepository.findById(idInexistant)).thenReturn(Optional.empty());
+
+        assertThrows(PatientIntrouvableException.class , () -> patientService.supprimerPatient(idInexistant) );
+
+        verify(patientRepository , never()).deleteById(anyString());
     }
     
 }
