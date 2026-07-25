@@ -26,6 +26,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
@@ -127,5 +129,32 @@ public class PatientControllerIT {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(requeteInvalide)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void obtenirPatient_retourne200_siPatientExiste() throws Exception {
+        String token = obtenirAccessToken("medcin-detail@medapp.com" , Role.MEDECIN);
+
+         PatientRequest request = new PatientRequest(
+                "Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+                "12345678", "12 rue de la Paix", "1900512100003",
+                List.of(), null
+        );
+
+        MvcResult creationResult = mockMvc.perform(post("/api/patients")
+                        .header("Authorization" , "Bearer " + token)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andReturn();
+
+        String patientId = objectMapper.readTree(creationResult.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(get("/api/patients/" + patientId)
+                        .header("Authorization" , "Bearer " + token))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.nom").value("Dupont"));
+
+
     }
 }
