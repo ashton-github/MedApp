@@ -279,4 +279,27 @@ public class PatientControllerIT {
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].nom").exists());
     }
+
+    @Test
+    void recherchePatients_retournePatientsCorrespondants() throws Exception {
+        String token = obtenirAccessToken("medecin-recherche@medapp.com", Role.MEDECIN);
+
+        PatientRequest request = new PatientRequest(
+                "Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+                "12345678", "12 rue de la Paix", "1900512100012",
+                List.of(), null
+        );
+
+        mockMvc.perform(post("/api/patients")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/patients/search")
+                        .param("query" , "dupo")
+                        .header("Authorization" , "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].nom").value("Dupont"));
+    }
 }
