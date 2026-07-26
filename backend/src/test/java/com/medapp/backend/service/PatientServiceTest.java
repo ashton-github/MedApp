@@ -18,6 +18,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import com.medapp.backend.exception.DonneesInvalidesException;
 import com.medapp.backend.exception.NumeroSecuriteSocialeDejaExistantException;
@@ -26,6 +30,7 @@ import com.medapp.backend.model.Patient;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.model.Sexe;
 import com.medapp.backend.repository.PatientRepository;
+
 
 @ExtendWith(MockitoExtension.class)
 public class PatientServiceTest {
@@ -208,6 +213,28 @@ public class PatientServiceTest {
 
         assertEquals("1900512123456", resultMedecin.getNumeroSecuriteSociale());
         assertEquals("1900512123456", resultAdmin.getNumeroSecuriteSociale());
+    }
+    
+
+    @Test 
+    void listerPatients_retourneUnePageDePatients(){
+        Patient patient1 = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+                "12345678", "12 rue de la Paix", "1900512100010",
+                List.of(), null, null, null);
+
+        patient1.setId("patient-1");
+
+        Pageable pageable = PageRequest.of(0 , 10 );
+        
+        Page<Patient> pageAttendue = new PageImpl<>(List.of(patient1), pageable, 1);
+        when(patientRepository.findAll(pageable)).thenReturn(pageAttendue);
+
+        Page<Patient> result = patientService.listerPatients(pageable);
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals("Dupont", result.getContent().get(0) .getNom());
+
+        
     }
     
 }

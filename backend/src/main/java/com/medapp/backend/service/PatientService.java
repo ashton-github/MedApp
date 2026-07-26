@@ -8,6 +8,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+
 import org.springframework.stereotype.Service;
 
 import com.medapp.backend.exception.DonneesInvalidesException;
@@ -91,5 +94,9 @@ public class PatientService {
             }
         }
         return patient;
+    }
+
+    public Page<Patient> listerPatients(Pageable pageable){
+        return patientRepository.findAll(pageable);
     }
 }
