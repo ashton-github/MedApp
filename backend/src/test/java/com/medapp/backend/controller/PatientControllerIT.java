@@ -329,4 +329,24 @@ public class PatientControllerIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.numeroSecuriteSociale").value("XXXXXXXXXX013"));
     }
+
+    @Test
+    void creerPatient_retourneMessageCoherent_siDonneesInvalides() throws Exception {
+        // given
+        String token = obtenirAccessToken("medecin-format-erreur@medapp.com", Role.MEDECIN);
+
+        PatientRequest requeteInvalide = new PatientRequest(
+                "", "Marie", LocalDate.now().plusDays(1), Sexe.F,
+                "12345678", "12 rue de la Paix", "1900512100014",
+                List.of(), null
+        );
+
+        // when/then
+        mockMvc.perform(post("/api/patients")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(requeteInvalide)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").exists());
+    }
 }
