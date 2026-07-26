@@ -302,4 +302,31 @@ public class PatientControllerIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nom").value("Dupont"));
     }
+
+
+    @Test
+    void obtenirPatient_masqueSSN_pourRoleSecretaire() throws Exception {
+        String tokenSecretaire = obtenirAccessToken("secretaire-consulte@medapp.com", Role.SECRETAIRE);
+
+        PatientRequest request = new PatientRequest(
+                "Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+                "12345678", "12 rue de la Paix", "1900512100013",
+                List.of(), null
+        );
+
+        MvcResult creationResult = mockMvc.perform(post("/api/patients")
+                        .header("Authorization", "Bearer " + tokenSecretaire)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String patientId = objectMapper.readTree(creationResult.getResponse().getContentAsString()).get("id").asText();
+
+        // when/then
+        mockMvc.perform(get("/api/patients/" + patientId)
+                        .header("Authorization", "Bearer " + tokenSecretaire))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.numeroSecuriteSociale").value("XXXXXXXXXX013"));
+    }
 }
