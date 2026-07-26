@@ -229,4 +229,15 @@ public class AuthControllerIT {
                     .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void register_retourneMessageCoherent_siMotDePasseInvalide() throws Exception {
+        RegisterRequest requete = new RegisterRequest("format-erreur@medapp.com", "123", "Dupont", "Jean", Role.MEDECIN);
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(requete)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
 }
