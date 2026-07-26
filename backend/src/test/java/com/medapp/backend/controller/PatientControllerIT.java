@@ -256,4 +256,27 @@ public class PatientControllerIT {
                         .header("Authorization", "Bearer " + tokenMedecin))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void listerPatients_retourne200_avecPageDePatients() throws Exception {
+        String token = obtenirAccessToken("medcin-liste@medapp.com", Role.MEDECIN);
+
+        PatientRequest request = new PatientRequest(
+                "Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+                "12345678", "12 rue de la Paix", "1900512100011",
+                List.of(), null
+        );
+
+        mockMvc.perform(post("/api/patients")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/patients")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].nom").exists());
+    }
 }

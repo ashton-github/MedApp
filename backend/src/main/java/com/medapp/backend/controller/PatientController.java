@@ -9,6 +9,7 @@ import com.medapp.backend.model.Patient;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.service.PatientService;
 
+import io.micrometer.core.ipc.http.HttpSender.Response;
 import jakarta.validation.Valid;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +25,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PutMapping;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 
 
@@ -102,6 +106,18 @@ public class PatientController {
         patientService.supprimerPatient(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping
+    public ResponseEntity<Page<PatientResponse>> listerPatients(Pageable pageable , Authentication authentication) {
+        Page<Patient> patients = patientService.listerPatients(pageable);
+        Role role = extraireRole(authentication);
+        Page<PatientResponse> responses = patients.map(patient -> {
+            Patient patientMasque = patientService.appliquerMasquageSelonRole(patient, role);
+            return versResponse(patientMasque);
+        });
+        return ResponseEntity.ok(responses);
+    }
+    
 
     
     
