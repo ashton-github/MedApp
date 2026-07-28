@@ -3,26 +3,12 @@ import { screens } from '../constants/medapp.js'
 
 const currentScreen = ref(screens.login)
 const authUser = ref(null)
+const selectedPatientId = ref(null)  // ID of the patient currently displayed in detail view
+const patientToEdit = ref(null)
 
 const authForm = ref({
   email: '',
   password: ''
-})
-
-const patientToEdit = ref(null)
-
-const prescriptionDraft = ref({
-  patient: '',
-  validite: '',
-  medicament1: '',
-  dosage1: '',
-  frequence1: '',
-  duree1: '',
-  medicament2: '',
-  dosage2: '',
-  frequence2: '',
-  duree2: '',
-  remarques: ''
 })
 
 export function useMedAppState() {
@@ -47,13 +33,17 @@ export function useMedAppState() {
     showScreen(screens.patientForm)
   }
 
+  const viewPatient = (patientId) => {
+    selectedPatientId.value = patientId
+    showScreen(screens.patientDetail)
+  }
+
   const openNewPatient = () => {
     patientToEdit.value = null
     showScreen(screens.patientForm)
   }
 
   const openNewOrdonnance = () => {
-    prescriptionDraft.value = { patient: '', validite: '', medicament1: '', dosage1: '', frequence1: '', duree1: '', medicament2: '', dosage2: '', frequence2: '', duree2: '', remarques: '' }
     showScreen(screens.ordonnanceForm)
   }
 
@@ -61,12 +51,13 @@ export function useMedAppState() {
     currentScreen,
     authUser,
     authForm,
+    selectedPatientId,
     patientToEdit,
-    prescriptionDraft,
     showScreen,
     signIn,
     logout,
     editPatient,
+    viewPatient,
     openNewPatient,
     openNewOrdonnance
   }
