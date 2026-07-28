@@ -1,121 +1,150 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import PatientsScreen from '../src/components/screens/PatientsScreen.vue'
 
-// Mock useMedAppState with vi.hoisted
-const { mockShowScreen, mockOpenNewPatient, mockEditPatient } = vi.hoisted(() => {
-  return {
-    mockShowScreen: vi.fn(),
-    mockOpenNewPatient: vi.fn(),
-    mockEditPatient: vi.fn()
-  }
-})
+// ── Mocks ──────────────────────────────────────────────────────────────────────
+const { mockOpenNewPatient, mockEditPatient, mockViewPatient } = vi.hoisted(() => ({
+  mockOpenNewPatient: vi.fn(),
+  mockEditPatient:    vi.fn(),
+  mockViewPatient:    vi.fn()
+}))
 
 vi.mock('../src/composables/useMedAppState.js', () => ({
   useMedAppState: () => ({
-    showScreen: mockShowScreen,
     openNewPatient: mockOpenNewPatient,
-    editPatient: mockEditPatient
+    editPatient:    mockEditPatient,
+    viewPatient:    mockViewPatient
   })
 }))
 
+// Mock patientStore
+const mockPatientStore = {
+  patients:    [],
+  loading:     false,
+  error:       null,
+  totalItems:  0,
+  fetchPatients:   vi.fn(),
+  searchPatients:  vi.fn(),
+  deletePatient:   vi.fn()
+}
+
+vi.mock('../src/stores/patientStore.js', () => ({
+  usePatientStore: () => mockPatientStore
+}))
+
+const mockAuthStore = { role: 'medecin' }
+vi.mock('../src/stores/authStore.js', () => ({
+  useAuthStore: () => mockAuthStore
+}))
+
+// ── Sample data ────────────────────────────────────────────────────────────────
+const SAMPLE_PATIENTS = [
+  {
+    id: 'p1', firstName: 'Sophie', lastName: 'Laurent',
+    birthDate: '1985-03-15', gender: 'F',
+    phone: '+33 6 12 34 56 78', address: '10 rue de la Paix, Paris',
+    socialSecurityNumber: '1850375075089', referringDoctor: 'Dr. Martin',
+    medicalHistory: ['Pénicilline'], status: 'active'
+  },
+  {
+    id: 'p2', firstName: 'Marc', lastName: 'Dubois',
+    birthDate: '1972-11-22', gender: 'M',
+    phone: '+33 6 98 76 54 32', address: null,
+    socialSecurityNumber: '1721167098023', referringDoctor: null,
+    medicalHistory: [], status: 'active'
+  }
+]
+
+// ── Helper ─────────────────────────────────────────────────────────────────────
+const createWrapper = () =>
+  mount(PatientsScreen, {
+    global: {
+      plugins: [createPinia()],
+      stubs: {
+        'v-motion': { template: '<div><slot /></div>' },
+        Users: true, Search: true, Filter: true, Plus: true,
+        LayoutGrid: true, List: true, Eye: true, Pencil: true,
+        Phone: true, Mail: true, Trash2: true, AlertCircle: true
+      }
+    }
+  })
+
+// ── Tests ──────────────────────────────────────────────────────────────────────
 describe('PatientsScreen.vue', () => {
   beforeEach(() => {
-    mockShowScreen.mockClear()
+    setActivePinia(createPinia())
+    mockAuthStore.role          = 'medecin'
+    mockPatientStore.patients   = []
+    mockPatientStore.loading    = false
+    mockPatientStore.error      = null
+    mockPatientStore.totalItems = 0
+    mockPatientStore.fetchPatients.mockClear()
+    mockPatientStore.searchPatients.mockClear()
+    mockPatientStore.deletePatient.mockClear()
     mockOpenNewPatient.mockClear()
     mockEditPatient.mockClear()
+    mockViewPatient.mockClear()
     vi.restoreAllMocks()
   })
 
-  const createWrapper = () => {
-    return mount(PatientsScreen, {
-      global: {
-        directives: {
-          motion: () => { }
-        },
-        stubs: {
-          // Stub icons to avoid warnings
-          Users: true,
-          Search: true,
-          Filter: true,
-          Plus: true,
-          LayoutGrid: true,
-          List: true,
-          Eye: true,
-          Pencil: true,
-          Phone: true,
-          Mail: true,
-          Trash2: true
-        }
-      }
-    })
-  }
-
-  it('renders patients screen with a title', () => {
-    const wrapper = createWrapper()
-    expect(wrapper.text()).toContain('Patients')
-    expect(wrapper.text()).toContain('Nouveau patient')
+  it('calls fetchPatients on mount', async () => {
+    createWrapper()
+    expect(mockPatientStore.fetchPatients).toHaveBeenCalled()
   })
 
-  it('filters patients based on search input', async () => {
+  it('shows empty state when no patients', () => {
     const wrapper = createWrapper()
-    const searchInput = wrapper.find('input[type="search"]')
-    
-    expect(wrapper.text()).toContain('Sophie Laurent')
-    
-    await searchInput.setValue('Amira')
-    expect(wrapper.text()).toContain('Amira Benali')
-    expect(wrapper.text()).not.toContain('Sophie Laurent')
+    expect(wrapper.text()).toContain('Aucun patient trouvé')
   })
 
-  it('calls openNewPatient when new patient button is clicked', async () => {
+  it('renders patient cards in grid view', async () => {
+    mockPatientStore.patients = SAMPLE_PATIENTS
     const wrapper = createWrapper()
-    const newPatientBtn = wrapper.findAll('button').find(btn => btn.text().includes('Nouveau patient'))
-    
-    await newPatientBtn.trigger('click')
+    expect(wrapper.text()).toContain('Sophie')
+    expect(wrapper.text()).toContain('Marc')
+  })
+
+  it('shows error banner when patientStore.error is set', () => {
+    mockPatientStore.error = 'Erreur de connexion au serveur.'
+    const wrapper = createWrapper()
+    expect(wrapper.text()).toContain('Erreur de connexion au serveur.')
+  })
+
+  it('calls openNewPatient when "Nouveau patient" is clicked', async () => {
+    const wrapper = createWrapper()
+    const btn = wrapper.findAll('button').find(b => b.text().includes('Nouveau patient'))
+    await btn.trigger('click')
     expect(mockOpenNewPatient).toHaveBeenCalled()
   })
 
-  it('opens delete confirmation modal when trash icon is clicked', async () => {
-    const wrapper = createWrapper()
-    
-    // Check that modal is not open initially
-    expect(wrapper.text()).not.toContain('Supprimer le patient')
-
-    // Find the delete button for the first patient (grid view by default)
-    const deleteBtn = wrapper.find('button[title="Supprimer"]')
-    expect(deleteBtn.exists()).toBe(true)
-
-    // Click delete button
-    await deleteBtn.trigger('click')
-
-    // Modal should now be open
-    expect(wrapper.text()).toContain('Supprimer le patient')
-    expect(wrapper.text()).toContain('Êtes-vous sûr de vouloir supprimer ce patient')
-  })
-
   it('switches between grid and list view', async () => {
+    mockPatientStore.patients = SAMPLE_PATIENTS
     const wrapper = createWrapper()
-    
-    // Grid view is default
+    // Grid is default
     expect(wrapper.find('.grid.grid-cols-1').exists()).toBe(true)
-    
-    // Switch to list view (second button in the layout group)
+    // Find list button by its stub
     const listBtns = wrapper.findAll('button').filter(b => b.html().toLowerCase().includes('list'))
     if (listBtns.length > 0) {
       await listBtns[0].trigger('click')
-      // List view uses a table
       expect(wrapper.find('table').exists()).toBe(true)
     }
   })
 
   it('calls editPatient when pencil icon is clicked', async () => {
+    mockPatientStore.patients = SAMPLE_PATIENTS
     const wrapper = createWrapper()
-    
-    // Grid view is default, pencil icon is now present here too
     const editBtn = wrapper.find('button[title="Modifier"]')
     await editBtn.trigger('click')
-    
     expect(mockEditPatient).toHaveBeenCalled()
+  })
+
+  it('shows delete confirmation modal when trash icon is clicked', async () => {
+    mockAuthStore.role = 'admin'
+    mockPatientStore.patients = SAMPLE_PATIENTS
+    const wrapper = createWrapper()
+    const deleteBtn = wrapper.find('button[title="Supprimer"]')
+    await deleteBtn.trigger('click')
+    expect(wrapper.text()).toContain('Supprimer le patient')
   })
 })

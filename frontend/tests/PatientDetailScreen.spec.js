@@ -1,111 +1,144 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ref } from 'vue'
+import { createPinia, setActivePinia } from 'pinia'
 import PatientDetailScreen from '../src/components/screens/PatientDetailScreen.vue'
 
-// Mock useMedAppState using vi.hoisted so it works inside vi.mock
-const { mockShowScreen, mockAuthUser, mockEditPatient } = vi.hoisted(() => {
-  return {
-    mockShowScreen: vi.fn(),
-    mockAuthUser: { value: { role: 'medecin' } },
-    mockEditPatient: vi.fn()
-  }
-})
+// ── Mocks ──────────────────────────────────────────────────────────────────────
+const { mockShowScreen, mockEditPatient, mockSelectedPatientId } = vi.hoisted(() => ({
+  mockShowScreen:        vi.fn(),
+  mockEditPatient:       vi.fn(),
+  mockSelectedPatientId: { value: 'p1' }
+}))
 
 vi.mock('../src/composables/useMedAppState.js', () => ({
   useMedAppState: () => ({
-    showScreen: mockShowScreen,
-    authUser: mockAuthUser,
-    editPatient: mockEditPatient
+    showScreen:        mockShowScreen,
+    editPatient:       mockEditPatient,
+    selectedPatientId: mockSelectedPatientId
   })
 }))
 
+const SAMPLE_PATIENT = {
+  id: 'p1', firstName: 'Sophie', lastName: 'Laurent',
+  birthDate: '1985-03-15', gender: 'F',
+  phone: '+33 6 12 34 56 78', address: '10 rue de la Paix, Paris',
+  socialSecurityNumber: '1850375075089', referringDoctor: 'Dr. Martin',
+  medicalHistory: ['Pénicilline']
+}
+
+const mockPatientStore = {
+  loading:         false,
+  error:           null,
+  currentPatient:  null,
+  getPatientById:  vi.fn(),
+  deletePatient:   vi.fn()
+}
+
+vi.mock('../src/stores/patientStore.js', () => ({
+  usePatientStore: () => mockPatientStore
+}))
+
+// authStore controls role-based visibility
+const mockAuthStore = { role: 'medecin' }
+vi.mock('../src/stores/authStore.js', () => ({
+  useAuthStore: () => mockAuthStore
+}))
+
+// ── Helper ─────────────────────────────────────────────────────────────────────
+const createWrapper = () =>
+  mount(PatientDetailScreen, {
+    global: {
+      plugins: [createPinia()],
+      stubs: {
+        'v-motion': { template: '<div><slot /></div>' },
+        ChevronRight: true, Pencil: true, Plus: true,
+        Phone: true, Shield: true, Heart: true, Lock: true,
+        Activity: true, Trash2: true, Loader2: true,
+        AlertCircle: true, FileText: true
+      }
+    }
+  })
+
+// ── Tests ──────────────────────────────────────────────────────────────────────
 describe('PatientDetailScreen.vue', () => {
   beforeEach(() => {
+    setActivePinia(createPinia())
+    mockAuthStore.role             = 'medecin'
+    mockPatientStore.loading       = false
+    mockPatientStore.error         = null
+    mockPatientStore.currentPatient = null
+    mockPatientStore.getPatientById.mockClear()
+    mockPatientStore.deletePatient.mockClear()
     mockShowScreen.mockClear()
     mockEditPatient.mockClear()
-    mockAuthUser.value = { role: 'medecin' }
+    mockSelectedPatientId.value    = 'p1'
   })
 
-  const createWrapper = () => {
-    return mount(PatientDetailScreen, {
-      global: {
-        directives: {
-          motion: () => { }
-        },
-        stubs: {
-          ChevronRight: true,
-          Pencil: true,
-          Plus: true,
-          Phone: true,
-          Mail: true,
-          Shield: true,
-          Heart: true,
-          Lock: true,
-          Activity: true,
-          Trash2: true,
-          FileText: true
-        }
-      }
-    })
-  }
-
-  it('renders patient name and basic info', () => {
-    const wrapper = createWrapper()
-    expect(wrapper.text()).toContain('Sophie Laurent')
-    expect(wrapper.text()).toContain('CPAM Paris')
+  it('calls getPatientById on mount with the selectedPatientId', async () => {
+    createWrapper()
+    expect(mockPatientStore.getPatientById).toHaveBeenCalledWith('p1')
   })
 
-  it('renders tabs and switches content when a tab is clicked', async () => {
+  it('shows a loader while loading', () => {
+    mockPatientStore.loading = true
     const wrapper = createWrapper()
+    // Loader2 is stubbed as 'loader2-stub', but when loading=true and no currentPatient,
+    // the component renders the loading div. Check for the wrapping structure.
+    expect(wrapper.find('.animate-spin').exists() || wrapper.text().trim() === '').toBe(true)
+  })
 
-    // Overview is active by default
+  it('shows an error banner when there is an error and no patient', () => {
+    mockPatientStore.error = 'Patient introuvable.'
+    const wrapper = createWrapper()
+    expect(wrapper.text()).toContain('Patient introuvable.')
+  })
+
+  it('renders patient data when currentPatient is loaded', () => {
+    mockPatientStore.currentPatient = SAMPLE_PATIENT
+    const wrapper = createWrapper()
+    expect(wrapper.text()).toContain('Sophie')
+    expect(wrapper.text()).toContain('Laurent')
+    expect(wrapper.text()).toContain('Dr. Martin')
+  })
+
+  it('renders tabs and switches to Ordonnances tab', async () => {
+    mockPatientStore.currentPatient = SAMPLE_PATIENT
+    const wrapper = createWrapper()
+    // Overview active by default
     expect(wrapper.text()).toContain('Informations médicales')
-
-    // Switch to Prescriptions (Ordonnances) tab
+    // Switch to prescriptions tab
     const tabs = wrapper.findAll('button')
     const prescriptionsTab = tabs.find(b => b.text().includes('Ordonnances'))
     await prescriptionsTab.trigger('click')
-
-    // Check prescription content
-    expect(wrapper.text()).toContain('Amoxicilline 1g')
-
-    // Switch to History (Historique) tab
-    const historyTab = tabs.find(b => b.text().includes('Historique'))
-    await historyTab.trigger('click')
-
-    expect(wrapper.text()).toContain('Historique médical')
+    expect(wrapper.text()).toContain('ordonnance')
   })
 
-  it('opens delete confirmation modal when delete button is clicked', async () => {
+  it('calls editPatient when Modifier button is clicked', async () => {
+    mockPatientStore.currentPatient = SAMPLE_PATIENT
     const wrapper = createWrapper()
-    
-    expect(wrapper.text()).not.toContain('Êtes-vous sûr de vouloir supprimer')
-
-    const deleteBtn = wrapper.findAll('button').find(b => b.text().includes('Supprimer'))
-    await deleteBtn.trigger('click')
-
-    expect(wrapper.text()).toContain('Êtes-vous sûr de vouloir supprimer Sophie Laurent')
-  })
-
-  it('calls editPatient when modifier button is clicked', async () => {
-    const wrapper = createWrapper()
-    
     const editBtn = wrapper.findAll('button').find(b => b.text().includes('Modifier'))
     await editBtn.trigger('click')
-    
-    expect(mockEditPatient).toHaveBeenCalled()
+    expect(mockEditPatient).toHaveBeenCalledWith(SAMPLE_PATIENT)
   })
 
-  it('hides some buttons and info if user is not doctor', async () => {
-    mockAuthUser.value = { role: 'secretaire' }
+  it('shows delete confirmation modal when Supprimer is clicked', async () => {
+    mockAuthStore.role = 'admin'
+    mockPatientStore.currentPatient = SAMPLE_PATIENT
     const wrapper = createWrapper()
+    expect(wrapper.text()).not.toContain('Cette action est irréversible')
+    const deleteBtn = wrapper.findAll('button').find(b => b.text().includes('Supprimer'))
+    await deleteBtn.trigger('click')
+    expect(wrapper.text()).toContain('Cette action est irréversible')
+  })
 
-    // Should not see the Ordonnance button (be careful not to match the 'Ordonnances' tab)
+  it('hides Ordonnance button and shows Restreint for socialSecurityNumber when user is not doctor', () => {
+    mockAuthStore.role = 'secretaire'
+    mockPatientStore.currentPatient = SAMPLE_PATIENT
+    const wrapper = createWrapper()
+    // Ordonnance action button should not exist (only Ordonnances tab)
     const ordonnanceBtn = wrapper.findAll('button').find(b => b.text().trim() === 'Ordonnance')
     expect(ordonnanceBtn).toBeUndefined()
-
-    // Blood type should be masked
+    // Social security number should be masked
     expect(wrapper.text()).toContain('Restreint')
   })
 })

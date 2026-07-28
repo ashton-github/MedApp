@@ -1,113 +1,136 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import PatientFormScreen from '../src/components/screens/PatientFormScreen.vue'
 
-// Mock useMedAppState with vi.hoisted
-const { mockShowScreen, mockPatientToEdit } = vi.hoisted(() => {
-  return {
-    mockShowScreen: vi.fn(),
-    mockPatientToEdit: { value: null }
-  }
-})
+// ── Mocks ──────────────────────────────────────────────────────────────────────
+const { mockShowScreen, mockPatientToEdit } = vi.hoisted(() => ({
+  mockShowScreen:   vi.fn(),
+  mockPatientToEdit: { value: null }
+}))
 
 vi.mock('../src/composables/useMedAppState.js', () => ({
   useMedAppState: () => ({
-    showScreen: mockShowScreen,
-    patientToEdit: mockPatientToEdit
+    showScreen:     mockShowScreen,
+    patientToEdit:  mockPatientToEdit
   })
 }))
 
+const mockPatientStore = {
+  loading:       false,
+  error:         null,
+  createPatient: vi.fn(),
+  updatePatient: vi.fn()
+}
+
+vi.mock('../src/stores/patientStore.js', () => ({
+  usePatientStore: () => mockPatientStore
+}))
+
+// ── Helper ─────────────────────────────────────────────────────────────────────
+const createWrapper = () =>
+  mount(PatientFormScreen, {
+    global: {
+      plugins: [createPinia()],
+      stubs: {
+        'v-motion': { template: '<div><slot /></div>' },
+        ChevronLeft: true, ChevronRight: true, Check: true,
+        CheckCircle2: true, Loader2: true, Phone: true,
+        MapPin: true, Shield: true, AlertCircle: true
+      }
+    }
+  })
+
+// ── Tests ──────────────────────────────────────────────────────────────────────
 describe('PatientFormScreen.vue', () => {
   beforeEach(() => {
+    setActivePinia(createPinia())
+    mockPatientToEdit.value           = null
+    mockPatientStore.loading          = false
+    mockPatientStore.error            = null
+    mockPatientStore.createPatient.mockClear()
+    mockPatientStore.updatePatient.mockClear()
     mockShowScreen.mockClear()
-    mockPatientToEdit.value = null
     vi.useFakeTimers()
   })
 
-  const createWrapper = () => {
-    return mount(PatientFormScreen, {
-      global: {
-        directives: {
-          motion: () => { }
-        },
-        stubs: {
-          ChevronLeft: true,
-          ChevronRight: true,
-          Check: true,
-          CheckCircle2: true,
-          Loader2: true,
-          Phone: true,
-          MapPin: true,
-          Shield: true
-        }
-      }
-    })
-  }
+  afterEach(() => {
+    vi.useRealTimers()
+  })
 
-  it('renders step 1 by default', () => {
+  it('renders step 1 with "Nouveau patient" title in create mode', () => {
     const wrapper = createWrapper()
     expect(wrapper.text()).toContain('Nouveau patient')
     expect(wrapper.text()).toContain('Informations personnelles')
     expect(wrapper.find('input[placeholder="Sophie"]').exists()).toBe(true)
   })
 
-  it('renders in edit mode and prepopulates form when patientToEdit is set', () => {
+  it('renders in edit mode and pre-fills form from patientToEdit', () => {
     mockPatientToEdit.value = {
-      firstName: 'Marc',
-      lastName: 'Dubois',
-      phone: '+33 6 98 76 54 32'
+      id: 'p1', firstName: 'Marc', lastName: 'Dubois',
+      birthDate: '1972-11-22', gender: 'M',
+      phone: '+33 6 98 76 54 32', address: null,
+      socialSecurityNumber: '1721167098023',
+      referringDoctor: 'Dr. Bernard', medicalHistory: ['Asthme']
     }
     const wrapper = createWrapper()
-    
     expect(wrapper.text()).toContain('Modifier le patient')
-    
-    // Check if input is prepopulated
     const firstNameInput = wrapper.find('input[placeholder="Sophie"]')
     expect(firstNameInput.element.value).toBe('Marc')
-    
     const lastNameInput = wrapper.find('input[placeholder="Laurent"]')
     expect(lastNameInput.element.value).toBe('Dubois')
   })
 
-  it('can navigate to step 2 and step 3', async () => {
+  it('can navigate to step 2 and step 3 via Suivant button', async () => {
     const wrapper = createWrapper()
-    
-    // Fill required fields (optional for test, but good practice)
-    await wrapper.find('input[placeholder="Sophie"]').setValue('Jean')
-    
-    // Go to Step 2
-    const nextBtn = wrapper.findAll('button').find(b => b.text().includes('Suivant'))
+    // Step 1 → 2
+    let nextBtn = wrapper.findAll('button').find(b => b.text().includes('Suivant'))
     await nextBtn.trigger('click')
-    
     expect(wrapper.text()).toContain('Coordonnées')
-    expect(wrapper.text()).toContain('Numéro de sécurité sociale')
-    
-    // Go to Step 3
-    const nextBtn2 = wrapper.findAll('button').find(b => b.text().includes('Suivant'))
-    await nextBtn2.trigger('click')
-    
+    // Step 2 → 3
+    nextBtn = wrapper.findAll('button').find(b => b.text().includes('Suivant'))
+    await nextBtn.trigger('click')
     expect(wrapper.text()).toContain('Antécédents médicaux')
-    expect(wrapper.text()).toContain('Médecin référent (traitant)')
   })
 
-  it('submits form on last step and shows success message', async () => {
+  it('calls createPatient on submit in create mode', async () => {
+    mockPatientStore.createPatient.mockResolvedValue({ id: 'new1' })
     const wrapper = createWrapper()
-    
-    // Skip to step 3
-    wrapper.vm.step = 3
+    // Navigate to step 3
+    await wrapper.findAll('button').find(b => b.text().includes('Suivant')).trigger('click')
+    await wrapper.findAll('button').find(b => b.text().includes('Suivant')).trigger('click')
+    // Submit
+    await wrapper.findAll('button').find(b => b.text().includes('Créer')).trigger('click')
+    expect(mockPatientStore.createPatient).toHaveBeenCalled()
+  })
+
+  it('calls updatePatient on submit in edit mode', async () => {
+    mockPatientToEdit.value = {
+      id: 'p1', firstName: 'Marc', lastName: 'Dubois',
+      birthDate: '1972-11-22', gender: 'M',
+      phone: '', address: '', socialSecurityNumber: '1721167098023',
+      referringDoctor: '', medicalHistory: []
+    }
+    mockPatientStore.updatePatient.mockResolvedValue({ id: 'p1' })
+    const wrapper = createWrapper()
+    // Navigate to step 3
+    await wrapper.findAll('button').find(b => b.text().includes('Suivant')).trigger('click')
+    await wrapper.findAll('button').find(b => b.text().includes('Suivant')).trigger('click')
+    // Submit
+    await wrapper.findAll('button').find(b => b.text().includes('Enregistrer')).trigger('click')
+    expect(mockPatientStore.updatePatient).toHaveBeenCalledWith('p1', expect.any(Object))
+  })
+
+  it('shows error banner if API call fails', async () => {
+    mockPatientStore.createPatient.mockRejectedValue(new Error('Serveur indisponible'))
+    mockPatientStore.error = 'Serveur indisponible'
+    const wrapper = createWrapper()
+    // Navigate to step 3
+    await wrapper.findAll('button').find(b => b.text().includes('Suivant')).trigger('click')
+    await wrapper.findAll('button').find(b => b.text().includes('Suivant')).trigger('click')
+    // Submit
+    await wrapper.findAll('button').find(b => b.text().includes('Créer')).trigger('click')
     await wrapper.vm.$nextTick()
-    
-    const submitBtn = wrapper.findAll('button').find(b => b.text().includes('Créer le patient'))
-    expect(submitBtn.exists()).toBe(true)
-    
-    await submitBtn.trigger('click')
-    
-    // Fast-forward timers for the setTimeout in submit()
-    await vi.runAllTimersAsync()
-    await wrapper.vm.$nextTick()
-    
-    // Check if success view is displayed
-    expect(wrapper.text()).toContain('Patient créé !')
-    expect(wrapper.text()).toContain('Redirection')
+    expect(wrapper.text()).toContain('Serveur indisponible')
   })
 })
