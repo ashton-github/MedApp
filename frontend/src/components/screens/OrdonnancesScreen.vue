@@ -10,28 +10,35 @@ import {
   Pill
 } from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
+import { useOrdonnanceStore } from '../../stores/ordonnanceStore.js'
+import { usePatientStore } from '../../stores/patientStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
 
 const { authUser, openNewOrdonnance, showScreen } = useMedAppState()
+const ordonnanceStore = useOrdonnanceStore()
+const patientStore = usePatientStore()
 
 const filter = ref('ALL')
 const q = ref('')
-const loading = ref(true)
-
 onMounted(() => {
-  setTimeout(() => loading.value = false, 700)
+  ordonnanceStore.fetchOrdonnances()
+  if (patientStore.patients.length === 0) {
+    patientStore.fetchPatients()
+  }
 })
 
-const PRESCRIPTIONS = [
-  { id: "rx1", patientId: "p1", patientName: "Sophie Laurent", date: "2026-07-08", doctorName: "Dr. Martin", status: "ACTIVE", medications: [{ name: "Amoxicilline 1g", dosage: "1 matin, 1 soir", duration: "7 jours" }] },
-  { id: "rx2", patientId: "p2", patientName: "Marc Dubois", date: "2026-07-05", doctorName: "Dr. Martin", status: "ACTIVE", medications: [{ name: "Doliprane 1000", dosage: "1 si douleur", duration: "5 jours" }, { name: "Spasfon", dosage: "2 matin, midi, soir", duration: "3 jours" }] },
-  { id: "rx3", patientId: "p4", patientName: "Théo Moreau", date: "2026-06-12", doctorName: "Dr. Martin", status: "EXPIRED", medications: [{ name: "Loratadine", dosage: "1 par jour", duration: "1 mois" }] },
-  { id: "rx4", patientId: "p6", patientName: "Lucas Petit", date: "2025-11-20", doctorName: "Dr. Martin", status: "ARCHIVED", medications: [{ name: "Augmentin", dosage: "1 matin, 1 soir", duration: "6 jours" }] },
-]
+const getPatientName = (id) => {
+  const p = patientStore.patients.find(x => x.id === id)
+  return p ? `${p.firstName} ${p.lastName}` : 'Patient inconnu'
+}
 
 const list = computed(() => {
-  return PRESCRIPTIONS.filter(r => {
+  return ordonnanceStore.ordonnances.map(r => ({
+    ...r,
+    patientName: r.patientName || getPatientName(r.patientId),
+    doctorName: r.doctorName || 'Dr. inconnu'
+  })).filter(r => {
     const mf = filter.value === 'ALL' || r.status === filter.value
     const ms = r.patientName.toLowerCase().includes(q.value.toLowerCase()) || r.medications.some(m => m.name.toLowerCase().includes(q.value.toLowerCase()))
     return mf && ms
@@ -39,10 +46,10 @@ const list = computed(() => {
 })
 
 const TABS = computed(() => [
-  { v: 'ALL', label: 'Toutes', n: PRESCRIPTIONS.length },
-  { v: 'ACTIVE', label: 'Actives', n: PRESCRIPTIONS.filter(r => r.status === 'ACTIVE').length },
-  { v: 'EXPIRED', label: 'Expirées', n: PRESCRIPTIONS.filter(r => r.status === 'EXPIRED').length },
-  { v: 'ARCHIVED', label: 'Archivées', n: PRESCRIPTIONS.filter(r => r.status === 'ARCHIVED').length },
+  { v: 'ALL', label: 'Toutes', n: ordonnanceStore.ordonnances.length },
+  { v: 'ACTIVE', label: 'Actives', n: ordonnanceStore.ordonnances.filter(r => r.status === 'ACTIVE').length },
+  { v: 'EXPIRED', label: 'Expirées', n: ordonnanceStore.ordonnances.filter(r => r.status === 'EXPIRED').length },
+  { v: 'ARCHIVED', label: 'Archivées', n: ordonnanceStore.ordonnances.filter(r => r.status === 'ARCHIVED').length },
 ])
 
 const fmt = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })
@@ -64,7 +71,7 @@ const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.l
     <div class="flex items-center justify-between flex-wrap gap-3">
       <div>
         <h1 class="text-2xl font-bold text-foreground">Ordonnances</h1>
-        <p class="text-muted-foreground text-sm mt-0.5">{{ PRESCRIPTIONS.length }} ordonnances au total</p>
+        <p class="text-muted-foreground text-sm mt-0.5">{{ ordonnanceStore.ordonnances.length }} ordonnances au total</p>
       </div>
       <button v-if="authUser?.role === 'medecin'" @click="openNewOrdonnance" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
         <Plus class="w-4 h-4" /> Nouvelle ordonnance
@@ -89,7 +96,7 @@ const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.l
       />
     </div>
 
-    <template v-if="loading">
+    <template v-if="ordonnanceStore.loading">
       <div class="space-y-3">
         <div v-for="i in 5" :key="i" class="animate-pulse bg-muted rounded-xl h-24"></div>
       </div>
@@ -123,7 +130,7 @@ const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.l
                       {{ rx.status === 'ACTIVE' ? 'Active' : rx.status === 'EXPIRED' ? 'Expirée' : 'Archivée' }}
                     </span>
                   </div>
-                  <p class="text-xs text-muted-foreground mt-0.5">{{ fmt(rx.date) }} · {{ rx.doctorName }}</p>
+                  <p class="text-xs text-muted-foreground mt-0.5">{{ fmt(rx.issueDate) }} · {{ rx.doctorName }}</p>
                   <div class="flex flex-wrap gap-1.5 mt-2">
                     <span v-for="m in rx.medications" :key="m.name" class="inline-flex items-center gap-1 px-2 py-0.5 bg-muted rounded-lg text-xs text-muted-foreground">
                       <Pill class="w-2.5 h-2.5" />{{ m.name }}

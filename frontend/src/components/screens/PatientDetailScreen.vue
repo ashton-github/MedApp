@@ -12,21 +12,25 @@ import {
   Trash2,
   Loader2,
   AlertCircle,
-  FileText
+  FileText,
+  Pill
 } from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
 import { usePatientStore } from '../../stores/patientStore.js'
+import { useOrdonnanceStore } from '../../stores/ordonnanceStore.js'
 import { useAuthStore } from '../../stores/authStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
 
 const { showScreen, editPatient, selectedPatientId } = useMedAppState()
 const patientStore = usePatientStore()
+const ordonnanceStore = useOrdonnanceStore()
 const authStore = useAuthStore()
 
 const isDoc = authStore.role === 'medecin'
 const isAdmin = authStore.role === 'admin'
 const tab   = ref('overview')
+const patientOrdonnances = ref([])
 
 const showDeleteModal = ref(false)
 const confirmDelete = () => { showDeleteModal.value = true }
@@ -59,6 +63,7 @@ const p = patientStore.currentPatient  // reactive ref from store
 onMounted(async () => {
   if (selectedPatientId.value) {
     await patientStore.getPatientById(selectedPatientId.value)
+    patientOrdonnances.value = await ordonnanceStore.fetchOrdonnancesByPatientId(selectedPatientId.value)
   }
 })
 </script>
@@ -168,10 +173,34 @@ onMounted(async () => {
 
           <!-- Prescriptions -->
           <template v-else-if="tab === 'prescriptions'">
-            <div class="flex flex-col items-center py-12 text-center">
+            <div v-if="patientOrdonnances.length === 0" class="flex flex-col items-center py-12 text-center">
               <FileText class="w-10 h-10 text-muted-foreground mb-3" />
               <p class="font-medium text-foreground">Aucune ordonnance</p>
               <p class="text-muted-foreground text-sm mt-1">Les ordonnances seront affichées ici</p>
+            </div>
+            <div v-else class="space-y-3">
+              <div v-for="rx in patientOrdonnances" :key="rx.id" class="rounded-2xl border border-border bg-card p-4">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-sm font-semibold text-foreground">{{ fmt(rx.issueDate) }}</span>
+                  <span :class="[
+                      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
+                      rx.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                      rx.status === 'EXPIRED' ? 'bg-red-50 text-red-700 border-red-200' :
+                      'bg-gray-100 text-gray-500 border-gray-200'
+                    ]">
+                      {{ rx.status === 'ACTIVE' ? 'Active' : rx.status === 'EXPIRED' ? 'Expirée' : 'Archivée' }}
+                  </span>
+                </div>
+                <div class="space-y-2">
+                  <div v-for="m in rx.medications" :key="m.name" class="flex items-start gap-2 text-sm text-muted-foreground">
+                    <Pill class="w-4 h-4 shrink-0 mt-0.5 text-blue-500" />
+                    <div>
+                      <strong class="text-foreground font-medium block">{{ m.name }}</strong>
+                      <span>{{ m.dosage }}{{ m.dosage && m.frequency ? ' · ' : '' }}{{ m.frequency }}{{ (m.dosage || m.frequency) && m.duration ? ' · ' : '' }}{{ m.duration }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </template>
 

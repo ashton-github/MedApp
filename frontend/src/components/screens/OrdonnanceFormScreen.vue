@@ -14,10 +14,14 @@ import {
   FileCheck
 } from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
+import { usePatientStore } from '../../stores/patientStore.js'
+import { useOrdonnanceStore } from '../../stores/ordonnanceStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
 
 const { showScreen } = useMedAppState()
+const patientStore = usePatientStore()
+const ordonnanceStore = useOrdonnanceStore()
 
 const pq = ref('')
 const sel = ref(null)
@@ -27,32 +31,49 @@ const notes = ref('')
 const submitting = ref(false)
 const done = ref(false)
 
-const PATIENTS = [
-  { id: "p1", firstName: "Sophie", lastName: "Laurent" },
-  { id: "p2", firstName: "Marc", lastName: "Dubois" },
-  { id: "p3", firstName: "Amira", lastName: "Benali" },
-  { id: "p4", firstName: "Théo", lastName: "Moreau" },
-  { id: "p5", firstName: "Claire", lastName: "Fontaine" },
-  { id: "p6", firstName: "Lucas", lastName: "Petit" },
-]
+const validityMonths = ref(1)
+
+// Fetch patients if empty
+if (patientStore.patients.length === 0) {
+  patientStore.fetchPatients()
+}
 
 const sug = computed(() => {
   if (pq.value.length < 2) return []
-  return PATIENTS.filter(p => `${p.firstName} ${p.lastName}`.toLowerCase().includes(pq.value.toLowerCase()))
+  return patientStore.patients.filter(p => `${p.firstName} ${p.lastName}`.toLowerCase().includes(pq.value.toLowerCase()))
 })
 
-const addMed = () => meds.value.push({ name: '', dosage: '', duration: '' })
+const addMed = () => meds.value.push({ name: '', dosage: '', frequency: '', duration: '' })
 const rmMed = (i) => meds.value.splice(i, 1)
 
-const submit = () => {
+const submit = async () => {
   submitting.value = true
-  setTimeout(() => {
-    submitting.value = false
+  
+  const issueDate = new Date().toISOString().split('T')[0]
+  const d = new Date()
+  d.setMonth(d.getMonth() + Number(validityMonths.value))
+  const validityDate = d.toISOString().split('T')[0]
+
+  try {
+    await ordonnanceStore.createOrdonnance({
+      patientId: sel.value.id,
+      doctorId: null, // Will be set by backend or auth context
+      issueDate,
+      validityDate,
+      status: 'ACTIVE',
+      notes: notes.value,
+      medications: meds.value
+    })
+    
     done.value = true
     setTimeout(() => {
       showScreen(screens.ordonnances)
     }, 1400)
-  }, 1400)
+  } catch (err) {
+    // Error handled by store
+  } finally {
+    submitting.value = false
+  }
 }
 
 const AVATAR_COLORS = [
@@ -138,7 +159,7 @@ const initials = (f, l) => `${f[0]}${l[0]}`.toUpperCase()
             </div>
             <div class="space-y-1.5">
               <label class="text-xs font-medium text-foreground">Validité (mois)</label>
-              <select class="w-full h-9 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground">
+              <select v-model="validityMonths" class="w-full h-9 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground">
                 <option value="1">1 mois</option>
                 <option value="3">3 mois</option>
                 <option value="6">6 mois</option>
@@ -157,10 +178,14 @@ const initials = (f, l) => `${f[0]}${l[0]}`.toUpperCase()
               <label class="text-xs font-medium text-foreground">Nom et format *</label>
               <input v-model="m.name" placeholder="ex: Doliprane 1000mg comprimés" class="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-3 gap-4">
               <div class="space-y-1.5">
-                <label class="text-xs font-medium text-foreground">Posologie *</label>
-                <input v-model="m.dosage" placeholder="ex: 1 matin et soir" class="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+                <label class="text-xs font-medium text-foreground">Dosage *</label>
+                <input v-model="m.dosage" placeholder="ex: 1000mg" class="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-xs font-medium text-foreground">Fréquence *</label>
+                <input v-model="m.frequency" placeholder="ex: 1 matin et soir" class="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
               </div>
               <div class="space-y-1.5">
                 <label class="text-xs font-medium text-foreground">Durée *</label>
@@ -210,7 +235,11 @@ const initials = (f, l) => `${f[0]}${l[0]}`.toUpperCase()
               <div class="space-y-1">
                 <div v-for="(m, i) in meds.filter(m => m.name)" :key="i" class="p-2 bg-muted rounded-xl">
                   <p class="text-xs font-semibold text-foreground">{{ m.name }}</p>
-                  <p v-if="m.dosage || m.duration" class="text-xs text-muted-foreground">{{ m.dosage }}{{ m.dosage && m.duration ? ' · ' : '' }}{{ m.duration }}</p>
+                  <p v-if="m.dosage || m.frequency || m.duration" class="text-xs text-muted-foreground">
+                    {{ m.dosage }}{{ (m.dosage && (m.frequency || m.duration)) ? ' · ' : '' }}
+                    {{ m.frequency }}{{ (m.frequency && m.duration) ? ' · ' : '' }}
+                    {{ m.duration }}
+                  </p>
                 </div>
               </div>
             </div>

@@ -38,6 +38,13 @@ vi.mock('../src/stores/patientStore.js', () => ({
   usePatientStore: () => mockPatientStore
 }))
 
+const mockOrdonnanceStore = {
+  fetchOrdonnancesByPatientId: vi.fn().mockResolvedValue([])
+}
+vi.mock('../src/stores/ordonnanceStore.js', () => ({
+  useOrdonnanceStore: () => mockOrdonnanceStore
+}))
+
 // authStore controls role-based visibility
 const mockAuthStore = { role: 'medecin' }
 vi.mock('../src/stores/authStore.js', () => ({
