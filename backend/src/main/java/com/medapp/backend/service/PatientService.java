@@ -65,6 +65,7 @@ public class PatientService {
         Patient patientExistant = patientRepository.findById(id).orElseThrow(() -> new PatientIntrouvableException(id));
 
         patientExistant.setNom(patientModifie.getNom());
+        patientExistant.setPrenom(patientModifie.getPrenom());
         patientExistant.setDateNaissance(patientModifie.getDateNaissance());
         patientExistant.setSexe(patientModifie.getSexe());
         patientExistant.setTelephone(patientModifie.getTelephone());
