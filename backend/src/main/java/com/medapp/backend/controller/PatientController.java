@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.medapp.backend.dto.PatientRequest;
 import com.medapp.backend.dto.PatientResponse;
+import com.medapp.backend.mapper.PatientMapper;
 import com.medapp.backend.model.Patient;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.service.PatientService;
@@ -38,23 +39,23 @@ import org.springframework.data.domain.Pageable;
 public class PatientController {
 
     private final PatientService patientService;
+    private final PatientMapper patientMapper;
 
-    public PatientController(PatientService patientService){
+    public PatientController(PatientService patientService , PatientMapper patientMapper){
         this.patientService = patientService;
+        this.patientMapper = patientMapper;
     }
 
     @PostMapping
     public ResponseEntity<PatientResponse> creePatient(@Valid @RequestBody PatientRequest request , Authentication authentication) {
-        Patient patient = new Patient(request.nom() , request.prenom() , request.dateNaissance(),
-                    request.sexe() , request.telephone() , request.adresse() , request.numeroSecuriteSociale() ,
-                    request.antecedents() , request.medecinReferent() , null , null );
+        Patient patient = patientMapper.versEntite(request);
 
         Patient patientCree = patientService.creerPatient(patient);
 
         Role role = extraireRole(authentication);
         Patient patientMasque = patientService.appliquerMasquageSelonRole(patientCree,role);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(versResponse(patientMasque));
+        return ResponseEntity.status(HttpStatus.CREATED).body(patientMapper.versResponse(patientMasque));
 
     }
     
@@ -65,39 +66,28 @@ public class PatientController {
                 .orElseThrow(() -> new IllegalStateException("Aucun role trouvee pour l'utilisateur courant."));
     }
 
-    private PatientResponse versResponse(Patient patient){
-        return new PatientResponse(
-                patient.getId(), patient.getNom(), patient.getPrenom(), patient.getDateNaissance(),
-                patient.getSexe(), patient.getTelephone(), patient.getAdresse(),
-                patient.getNumeroSecuriteSociale(), patient.getAntecedents(), patient.getMedecinReferent(),
-                patient.getDateCreation(), patient.getDateMiseAJour()
-        );
-    }
+    
 
     @GetMapping("/{id}")
-    public ResponseEntity<PatientResponse> getMethodName(@PathVariable String id , Authentication authentication) {
+    public ResponseEntity<PatientResponse> obtenirPatient(@PathVariable String id , Authentication authentication) {
         Patient patient = patientService.obtenirPatient(id);
         Role role = extraireRole(authentication);
         Patient patientMasque = patientService.appliquerMasquageSelonRole(patient, role);
 
-        return ResponseEntity.ok(versResponse(patientMasque));
+        return ResponseEntity.ok(patientMapper.versResponse(patientMasque));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PatientResponse> obtenirPatient(@PathVariable String id, @Valid @RequestBody PatientRequest request , Authentication authentication) {
+    public ResponseEntity<PatientResponse> modifierPatient(@PathVariable String id, @Valid @RequestBody PatientRequest request , Authentication authentication) {
         
-        Patient patientModifier =  new Patient(
-                request.nom(), request.prenom(), request.dateNaissance(), request.sexe(),
-                request.telephone(), request.adresse(), request.numeroSecuriteSociale(),
-                request.antecedents(), request.medecinReferent(), null, null
-        );
+        Patient patientModifier =  patientMapper.versEntite(request);
 
         Patient patientMisAJour = patientService.modifierPatient(id, patientModifier);
 
         Role role = extraireRole(authentication);
         Patient patientMasque = patientService.appliquerMasquageSelonRole(patientMisAJour, role);
 
-        return ResponseEntity.ok(versResponse(patientMasque));
+        return ResponseEntity.ok(patientMapper.versResponse(patientMasque));
     }
 
 
@@ -114,7 +104,7 @@ public class PatientController {
         Role role = extraireRole(authentication);
         Page<PatientResponse> responses = patients.map(patient -> {
             Patient patientMasque = patientService.appliquerMasquageSelonRole(patient, role);
-            return versResponse(patientMasque);
+            return patientMapper.versResponse(patientMasque);
         });
         return ResponseEntity.ok(responses);
     }
@@ -125,7 +115,7 @@ public class PatientController {
         Role role = extraireRole(authentication);
 
         List<PatientResponse> responses = patients.stream()
-                .map(patient -> versResponse(patientService.appliquerMasquageSelonRole(patient, role)))
+                .map(patient -> patientMapper.versResponse(patientService.appliquerMasquageSelonRole(patient, role)))
                 .toList();
                     
         return ResponseEntity.ok(responses);
