@@ -240,4 +240,11 @@ public class AuthControllerIT {
                 .andExpect(jsonPath("$.message").exists());
     }
 
+    @Test
+    void refreshToken_lanceException_siAucunCookiePresent() throws Exception {
+        mockMvc.perform(post("/api/auth/refresh-token"))
+            // no cookie() attached at all
+            .andExpect(status().isUnauthorized());
+    }
+
 }
