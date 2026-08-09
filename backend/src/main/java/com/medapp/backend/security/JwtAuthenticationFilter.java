@@ -11,6 +11,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.medapp.backend.model.Role;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,10 +40,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if(jwtService.isAccessTokenValid(token)){
                 String userId = jwtService.extractUserId(token);
-                String role = jwtService.extractRole(token);
+                String roleStr = jwtService.extractRole(token);
+                Role role = Role.valueOf(roleStr);
 
                 var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
-                var authentication = new UsernamePasswordAuthenticationToken(userId, null , authorities);
+                var utilisateur = new UtilisateurAuthentifie(userId, role);
+                var authentication = new UsernamePasswordAuthenticationToken(utilisateur, null , authorities);
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 

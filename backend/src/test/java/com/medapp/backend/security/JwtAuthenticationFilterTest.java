@@ -59,11 +59,15 @@ public class JwtAuthenticationFilterTest {
 
         //when
         filter.doFilterInternal(request , response , filterChain);
-
+        
         //then
         Authentication auth  = SecurityContextHolder.getContext().getAuthentication();
         assertNotNull(auth);
-        assertEquals("user-id-123", auth.getPrincipal());
+        assertEquals(UtilisateurAuthentifie.class , auth.getPrincipal().getClass());
+
+        UtilisateurAuthentifie principal = (UtilisateurAuthentifie) auth.getPrincipal();
+        assertEquals("user-id-123", principal.id());
+        assertEquals(Role.MEDECIN, principal.role());
         verify(filterChain).doFilter(request , response);
 
     }

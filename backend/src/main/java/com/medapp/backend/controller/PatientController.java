@@ -7,15 +7,13 @@ import com.medapp.backend.dto.PatientRequest;
 import com.medapp.backend.dto.PatientResponse;
 import com.medapp.backend.mapper.PatientMapper;
 import com.medapp.backend.model.Patient;
-import com.medapp.backend.model.Role;
+import com.medapp.backend.security.UtilisateurAuthentifie;
 import com.medapp.backend.service.PatientService;
 
 import jakarta.validation.Valid;
 
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-
-
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,45 +45,42 @@ public class PatientController {
     }
 
     @PostMapping
-    public ResponseEntity<PatientResponse> creePatient(@Valid @RequestBody PatientRequest request , Authentication authentication) {
+    public ResponseEntity<PatientResponse> creePatient(@Valid @RequestBody PatientRequest request , 
+        @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
         Patient patient = patientMapper.versEntite(request);
 
         Patient patientCree = patientService.creerPatient(patient);
 
-        Role role = extraireRole(authentication);
-        Patient patientMasque = patientService.appliquerMasquageSelonRole(patientCree,role);
+        Patient patientMasque = patientService.appliquerMasquageSelonRole(patientCree,utilisateur.role());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(patientMapper.versResponse(patientMasque));
 
     }
     
-    private Role extraireRole(Authentication authentication){
-        return authentication.getAuthorities().stream()
-                .findFirst()
-                .map(a -> Role.valueOf(a.getAuthority().replace("ROLE_", "")))
-                .orElseThrow(() -> new IllegalStateException("Aucun role trouvee pour l'utilisateur courant."));
-    }
+    
 
     
 
     @GetMapping("/{id}")
-    public ResponseEntity<PatientResponse> obtenirPatient(@PathVariable String id , Authentication authentication) {
+    public ResponseEntity<PatientResponse> obtenirPatient(@PathVariable String id , 
+        @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
         Patient patient = patientService.obtenirPatient(id);
-        Role role = extraireRole(authentication);
-        Patient patientMasque = patientService.appliquerMasquageSelonRole(patient, role);
+        
+        Patient patientMasque = patientService.appliquerMasquageSelonRole(patient, utilisateur.role());
 
         return ResponseEntity.ok(patientMapper.versResponse(patientMasque));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PatientResponse> modifierPatient(@PathVariable String id, @Valid @RequestBody PatientRequest request , Authentication authentication) {
+    public ResponseEntity<PatientResponse> modifierPatient(@PathVariable String id,
+         @Valid @RequestBody PatientRequest request , 
+         @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
         
         Patient patientModifier =  patientMapper.versEntite(request);
 
         Patient patientMisAJour = patientService.modifierPatient(id, patientModifier);
 
-        Role role = extraireRole(authentication);
-        Patient patientMasque = patientService.appliquerMasquageSelonRole(patientMisAJour, role);
+        Patient patientMasque = patientService.appliquerMasquageSelonRole(patientMisAJour, utilisateur.role());
 
         return ResponseEntity.ok(patientMapper.versResponse(patientMasque));
     }
@@ -99,23 +94,24 @@ public class PatientController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<PatientResponse>> listerPatients(Pageable pageable , Authentication authentication) {
+    public ResponseEntity<Page<PatientResponse>> listerPatients(Pageable pageable ,
+         @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
         Page<Patient> patients = patientService.listerPatients(pageable);
-        Role role = extraireRole(authentication);
+
         Page<PatientResponse> responses = patients.map(patient -> {
-            Patient patientMasque = patientService.appliquerMasquageSelonRole(patient, role);
+            Patient patientMasque = patientService.appliquerMasquageSelonRole(patient, utilisateur.role());
             return patientMapper.versResponse(patientMasque);
         });
         return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<PatientResponse>> rechercherPatients(@RequestParam String query , Authentication authentication){
+    public ResponseEntity<List<PatientResponse>> rechercherPatients(@RequestParam String query , 
+        @AuthenticationPrincipal UtilisateurAuthentifie utilisateur){
         List<Patient> patients = patientService.rechercherPatients(query);
-        Role role = extraireRole(authentication);
 
         List<PatientResponse> responses = patients.stream()
-                .map(patient -> patientMapper.versResponse(patientService.appliquerMasquageSelonRole(patient, role)))
+                .map(patient -> patientMapper.versResponse(patientService.appliquerMasquageSelonRole(patient, utilisateur.role())))
                 .toList();
                     
         return ResponseEntity.ok(responses);
