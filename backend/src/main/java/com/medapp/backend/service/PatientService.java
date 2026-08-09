@@ -1,6 +1,5 @@
 package com.medapp.backend.service;
 
-import com.medapp.backend.config.SecurityConfig;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -18,17 +17,19 @@ import com.medapp.backend.exception.NumeroSecuriteSocialeDejaExistantException;
 import com.medapp.backend.exception.PatientIntrouvableException;
 import com.medapp.backend.model.Patient;
 import com.medapp.backend.model.Role;
+import com.medapp.backend.model.User;
 import com.medapp.backend.repository.PatientRepository;
+import com.medapp.backend.repository.UserRepository;
 
 @Service
 public class PatientService {
 
-    private final SecurityConfig securityConfig;
     private final PatientRepository patientRepository;
+    private final UserRepository userRepository;
 
-    public PatientService(PatientRepository patientRepository, SecurityConfig securityConfig){
+    public PatientService(PatientRepository patientRepository , UserRepository userRepository){
         this.patientRepository = patientRepository;
-        this.securityConfig = securityConfig;
+        this.userRepository = userRepository;
     }
     
     public Patient creerPatient(Patient patient){
@@ -39,6 +40,7 @@ public class PatientService {
         if(patientRepository.findByNumeroSecuriteSociale(patient.getNumeroSecuriteSociale()).isPresent()){
             throw new NumeroSecuriteSocialeDejaExistantException(patient.getNumeroSecuriteSociale());
         }
+        validerMedecinReferent(patient.getMedecinReferent());
         patient.setDateCreation(LocalDateTime.now());
         return patientRepository.save(patient);
     }
@@ -72,6 +74,8 @@ public class PatientService {
                     throw new NumeroSecuriteSocialeDejaExistantException(nouveauNumero);
                 });
         }
+
+        validerMedecinReferent(patientModifie.getMedecinReferent());
         patientExistant.setNom(patientModifie.getNom());
         patientExistant.setPrenom(patientModifie.getPrenom());
         patientExistant.setDateNaissance(patientModifie.getDateNaissance());
@@ -107,5 +111,17 @@ public class PatientService {
 
     public Page<Patient> listerPatients(Pageable pageable){
         return patientRepository.findAll(pageable);
+    }
+
+
+    private void validerMedecinReferent(String medecinId){
+        if(medecinId == null){
+            return;
+        }
+        User medecin = userRepository.findById(medecinId)
+                        .orElseThrow(() -> new DonneesInvalidesException("Le medecin referent sepecifie n'existe pas."));
+        if(medecin.getRole() != Role.MEDECIN){
+            throw new DonneesInvalidesException("Le medecin referent doit avoir le role MEDECIN.");
+        }
     }
 }

@@ -9,7 +9,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.lang.foreign.Linker.Option;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,7 +31,9 @@ import com.medapp.backend.exception.PatientIntrouvableException;
 import com.medapp.backend.model.Patient;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.model.Sexe;
+import com.medapp.backend.model.User;
 import com.medapp.backend.repository.PatientRepository;
+import com.medapp.backend.repository.UserRepository;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -37,6 +41,10 @@ public class PatientServiceTest {
 
     @Mock
     private PatientRepository patientRepository;
+
+    
+    @Mock 
+    private UserRepository userRepository;
 
     @InjectMocks
     private PatientService patientService;
@@ -283,5 +291,49 @@ public class PatientServiceTest {
             () -> patientService.modifierPatient(id , patientModifie));
 
     }
+
+    @Test
+    void creerPatient_reussit_siMedcinReferentAbsent(){
+        Patient patient = new Patient("Dupont", "Marie", LocalDate.of(1990,5,12), Sexe.F,
+        "12345678", "12 rue de la Paix", "1900512123459",
+        List.of(), null, null, null);  // medecinReferent = null
+
+        when(patientRepository.findByNumeroSecuriteSociale(any())).thenReturn(Optional.empty());
+        when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Patient result = patientService.creerPatient(patient);
+        
+        assertNotNull(result);
+    }
+
+    @Test
+    void creerPatient_lanceException_siMedecinReferentInexistant(){
+        Patient patient = new Patient("Dupont", "Marie", LocalDate.of(1990,5,12), Sexe.F,
+        "12345678", "12 rue de la Paix", "1900512123459",
+        List.of(), "id-inexistant", null, null);
+
+
+        when(patientRepository.findByNumeroSecuriteSociale(any())).thenReturn(Optional.empty());
+        when(userRepository.findById("id-inexistant")).thenReturn(Optional.empty());
+
+        assertThrows(DonneesInvalidesException.class,
+            () ->  patientService.creerPatient(patient));
+    }
     
+    @Test
+    void creerPatient_lanceException_siMedecinReferentNaPasLeRoleMedecin(){
+
+        Patient patient = new Patient("Dupont", "Marie", LocalDate.of(1990,5,12), Sexe.F,
+        "12345678", "12 rue de la Paix", "1900512123459",
+        List.of(), "id-secretaire", null, null);
+
+        User secretaire = new User("s@medapp.com", "hash", "Sec", "Retaire", Role.SECRETAIRE, true, LocalDateTime.now(), null);
+        secretaire.setId("id-secretaire");
+
+        when(patientRepository.findByNumeroSecuriteSociale(any())).thenReturn(Optional.empty());
+        when(userRepository.findById("id-secretaire")).thenReturn(Optional.of(secretaire));
+
+        assertThrows(DonneesInvalidesException.class,
+            () -> patientService.creerPatient(patient));
+    }
 }
