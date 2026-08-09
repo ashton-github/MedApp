@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection="patients")
@@ -18,7 +19,10 @@ public class Patient {
     private Sexe sexe;
     private String telephone;
     private String adresse;
+
+    @Indexed(unique = true)
     private String numeroSecuriteSociale;
+
     private List<String> antecedents;
     private String medecinReferent;
     private LocalDateTime dateCreation;

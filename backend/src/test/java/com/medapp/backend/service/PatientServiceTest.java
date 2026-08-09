@@ -256,5 +256,32 @@ public class PatientServiceTest {
 
         assertEquals("Marie-Claire", resultat.getPrenom());
     }
+
+    @Test
+    void modifierPatient_lanceException_siNouveauNumeroSecuriteSocialeDejaExistatn(){
+        String id = "patient-existant-id";
+
+        Patient patientExistant = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+            "12345678", "12 rue de la Paix", "1900512123459",
+            List.of(), null, null, null);
+        patientExistant.setId(id);
+
+        Patient patientModifie = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
+            "12345678", "12 rue de la Paix", "1900513999999", // NSS belonging to another patient
+            List.of(), null, null, null);
+
+        Patient autrePatient = new Patient("Martin", "Julie", LocalDate.of(1985, 3, 1), Sexe.F,
+            "99999999", "1 avenue X", "1900513999999",
+            List.of(), null, null, null);
+        autrePatient.setId("autre-patient-id");
+
+        autrePatient.setId("autre-patient-id");
+        when(patientRepository.findById(id)).thenReturn(Optional.of(patientExistant));
+        when((patientRepository.findByNumeroSecuriteSociale("1900513999999"))).thenReturn(Optional.of(autrePatient));
+
+        assertThrows(NumeroSecuriteSocialeDejaExistantException.class,
+            () -> patientService.modifierPatient(id , patientModifie));
+
+    }
     
 }

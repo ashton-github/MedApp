@@ -64,6 +64,14 @@ public class PatientService {
     public Patient modifierPatient(String id , Patient patientModifie) {
         Patient patientExistant = patientRepository.findById(id).orElseThrow(() -> new PatientIntrouvableException(id));
 
+        String nouveauNumero = patientModifie.getNumeroSecuriteSociale();
+        if(nouveauNumero != null && !nouveauNumero.equals(patientExistant.getNumeroSecuriteSociale())){
+            patientRepository.findByNumeroSecuriteSociale(nouveauNumero)
+                .filter(autre -> !autre.getId().equals(id))
+                .ifPresent(autre -> {
+                    throw new NumeroSecuriteSocialeDejaExistantException(nouveauNumero);
+                });
+        }
         patientExistant.setNom(patientModifie.getNom());
         patientExistant.setPrenom(patientModifie.getPrenom());
         patientExistant.setDateNaissance(patientModifie.getDateNaissance());

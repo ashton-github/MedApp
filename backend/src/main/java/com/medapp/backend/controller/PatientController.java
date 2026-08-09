@@ -84,7 +84,7 @@ public class PatientController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PatientResponse> modifierPatient(@PathVariable String id, @Valid @RequestBody PatientRequest request , Authentication authentication) {
+    public ResponseEntity<PatientResponse> obtenirPatient(@PathVariable String id, @Valid @RequestBody PatientRequest request , Authentication authentication) {
         
         Patient patientModifier =  new Patient(
                 request.nom(), request.prenom(), request.dateNaissance(), request.sexe(),
