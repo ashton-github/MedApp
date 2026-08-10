@@ -186,12 +186,32 @@ public class OrdonnanceServiceTest {
         //repository returns them out of order , service must sort 
         when(ordonnanceRepository.findByPatientId(patientId)).thenReturn(List.of(ancienne , recente));
 
-        List<Ordonnance> result = ordonnanceService.obtenirHistorique(patientId);
+        List<Ordonnance> result = ordonnanceService.obtenirHistorique(patientId , null);
 
         assertEquals(2, result.size());
         assertEquals("ordo-2", result.get(0).getId());
         assertEquals("ordo-1", result.get(1).getId());
 
+    }
+
+    @Test
+    void obtenirHistorique_filtreParStatut_siStatutFourni() {
+        String patientId = "patient-123";
+
+        Ordonnance active = new Ordonnance(
+            patientId, "medecin-1", LocalDate.now(), LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            StatutOrdonnance.ACTIVE, null
+        );
+        active.setId("ordo-active");
+
+        when(ordonnanceRepository.findByPatientIdAndStatut(patientId, StatutOrdonnance.ACTIVE))
+            .thenReturn(List.of(active));
+
+        List<Ordonnance> resultat = ordonnanceService.obtenirHistorique(patientId, StatutOrdonnance.ACTIVE);
+
+        assertEquals(1, resultat.size());
+        assertEquals("ordo-active", resultat.get(0).getId());
     }
 
     

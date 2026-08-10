@@ -45,11 +45,16 @@ public class OrdonnanceService {
         
     }
 
-    public List<Ordonnance> obtenirHistorique(String patientId) {
-        return ordonnanceRepository.findByPatientId(patientId).stream()
-            .sorted(Comparator.comparing(Ordonnance::getDateEmission).reversed().thenComparing(Ordonnance::getId))
+    public List<Ordonnance> obtenirHistorique(String patientId , StatutOrdonnance statut) {
+        List<Ordonnance> ordonnances = (statut != null)
+        ? ordonnanceRepository.findByPatientIdAndStatut(patientId, statut)
+        : ordonnanceRepository.findByPatientId(patientId);
+
+        return ordonnances.stream()
+            .sorted(Comparator.comparing(Ordonnance::getDateEmission).reversed()
+                .thenComparing(Ordonnance::getId))
             .toList();
-    }
+        }
 
     
 }
