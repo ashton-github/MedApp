@@ -1,7 +1,10 @@
 package com.medapp.backend.service;
 
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 
+import com.medapp.backend.exception.OrdonnanceIntrouvableException;
 import com.medapp.backend.exception.PatientIntrouvableException;
 import com.medapp.backend.model.Ordonnance;
 import com.medapp.backend.model.StatutOrdonnance;
@@ -26,6 +29,18 @@ public class OrdonnanceService {
 
         ordonnance.setStatut(StatutOrdonnanceCalculator.calculer(ordonnance.getDateValidite(), ordonnance.getStatut()));
         return ordonnanceRepository.save(ordonnance);
+    }
+
+    public Ordonnance archiverOrdonnance(String ordonnanceId) {
+        Ordonnance ordonnance = ordonnanceRepository.findById(ordonnanceId)
+                    .orElseThrow(() -> new OrdonnanceIntrouvableException(ordonnanceId));
+
+        
+
+        ordonnance.setStatut(StatutOrdonnance.ARCHIVEE);
+        return ordonnanceRepository.save(ordonnance);
+
+        
     }
 
     

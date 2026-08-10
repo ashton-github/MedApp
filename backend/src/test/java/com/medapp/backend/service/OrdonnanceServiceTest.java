@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.internal.matchers.Or;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.medapp.backend.exception.OrdonnanceIntrouvableException;
 import com.medapp.backend.exception.PatientIntrouvableException;
 import com.medapp.backend.model.Medicament;
 import com.medapp.backend.model.Ordonnance;
@@ -131,6 +132,36 @@ public class OrdonnanceServiceTest {
         assertEquals(StatutOrdonnance.EXPIREE, resultat.getStatut());
 
 
+    }
+
+    @Test
+    void archiverOrdonnance_passeStatutAArichivee_siOrdonnanceExiste() {
+        String id = "ordonnance-1";
+        Ordonnance ordonnance = new Ordonnance(
+            "patient-123", "medecin-1", LocalDate.now(), LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            StatutOrdonnance.ACTIVE, null
+        );
+        ordonnance.setId(id);
+
+        when(ordonnanceRepository.findById(id)).thenReturn(Optional.of(ordonnance));
+        when(ordonnanceRepository.save(any(Ordonnance.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Ordonnance result = ordonnanceService.archiverOrdonnance(id);
+
+        assertEquals(StatutOrdonnance.ARCHIVEE, result.getStatut());
+    }
+
+    @Test
+    void archiverOrdonnance_lanceException_siIdInexistant(){
+        String idInexistant = "id-inexistant";
+
+        when(ordonnanceRepository.findById(idInexistant)).thenReturn(Optional.empty());
+
+        assertThrows(OrdonnanceIntrouvableException.class,
+            () -> ordonnanceService.archiverOrdonnance(idInexistant));
+
+        verify(ordonnanceRepository , never()).save(any(Ordonnance.class));
     }
 
 
