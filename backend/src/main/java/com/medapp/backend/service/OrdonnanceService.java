@@ -24,7 +24,7 @@ public class OrdonnanceService {
             () -> new PatientIntrouvableException(ordonnance.getPatientId())
         );
 
-        ordonnance.setStatut(StatutOrdonnance.ACTIVE);
+        ordonnance.setStatut(StatutOrdonnanceCalculator.calculer(ordonnance.getDateValidite(), ordonnance.getStatut()));
         return ordonnanceRepository.save(ordonnance);
     }
 
