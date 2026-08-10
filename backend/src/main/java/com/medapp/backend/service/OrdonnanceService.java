@@ -1,5 +1,7 @@
 package com.medapp.backend.service;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -41,6 +43,12 @@ public class OrdonnanceService {
         return ordonnanceRepository.save(ordonnance);
 
         
+    }
+
+    public List<Ordonnance> obtenirHistorique(String patientId) {
+        return ordonnanceRepository.findByPatientId(patientId).stream()
+            .sorted(Comparator.comparing(Ordonnance::getDateEmission).reversed().thenComparing(Ordonnance::getId))
+            .toList();
     }
 
     

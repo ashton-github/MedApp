@@ -165,5 +165,34 @@ public class OrdonnanceServiceTest {
     }
 
 
+    @Test
+    void obtenirHistorique_retourneOrdonnancesDuPatient_trieesParDate(){
+        String patientId = "patient-123";
+
+        Ordonnance ancienne = new Ordonnance(
+            patientId, "medecin-1", LocalDate.now().minusMonths(2), LocalDate.now().minusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            StatutOrdonnance.EXPIREE, null
+        );
+        ancienne.setId("ordo-1");
+
+        Ordonnance recente = new Ordonnance(
+            patientId, "medecin-1", LocalDate.now(), LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Amoxicilline", "500mg", "2x/jour", "7 jours")),
+            StatutOrdonnance.ACTIVE, null
+        );
+        recente.setId("ordo-2");
+
+        //repository returns them out of order , service must sort 
+        when(ordonnanceRepository.findByPatientId(patientId)).thenReturn(List.of(ancienne , recente));
+
+        List<Ordonnance> result = ordonnanceService.obtenirHistorique(patientId);
+
+        assertEquals(2, result.size());
+        assertEquals("ordo-2", result.get(0).getId());
+        assertEquals("ordo-1", result.get(1).getId());
+
+    }
+
     
 }
