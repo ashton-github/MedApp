@@ -27,4 +27,6 @@ public class OrdonnanceService {
         ordonnance.setStatut(StatutOrdonnance.ACTIVE);
         return ordonnanceRepository.save(ordonnance);
     }
+
+    
 }
