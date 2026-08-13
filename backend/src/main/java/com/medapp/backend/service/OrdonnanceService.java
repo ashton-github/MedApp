@@ -1,5 +1,6 @@
 package com.medapp.backend.service;
 
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,8 @@ public class OrdonnanceService {
         patientRepository.findById(ordonnance.getPatientId()).orElseThrow(
             () -> new PatientIntrouvableException(ordonnance.getPatientId())
         );
+
+        ordonnance.setDateEmission(LocalDate.now());
 
         ordonnance.setStatut(StatutOrdonnanceCalculator.calculer(ordonnance.getDateValidite(), ordonnance.getStatut()));
         return ordonnanceRepository.save(ordonnance);
