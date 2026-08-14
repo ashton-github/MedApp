@@ -59,5 +59,11 @@ public class OrdonnanceService {
             .toList();
         }
 
+    public Ordonnance obtenirOrdonnance(String id ) {
+    
+        return ordonnanceRepository.findById(id)
+            .orElseThrow(() -> new OrdonnanceIntrouvableException(id));
+    }
+
     
 }

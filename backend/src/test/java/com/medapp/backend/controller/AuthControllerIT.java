@@ -19,7 +19,6 @@ import com.medapp.backend.repository.UserRepository;
 
 import org.testcontainers.junit.jupiter.Container;
 
-import org.springframework.test.web.servlet.MvcResult;
 import jakarta.servlet.http.Cookie;
 import org.hamcrest.Matchers;
 
@@ -43,6 +42,7 @@ public class AuthControllerIT {
 
     @Autowired
     private UserRepository  userRepository;
+
 
     @Test
     void register_retourne201_siInscriptionValide()throws Exception {

@@ -1,6 +1,7 @@
 package com.medapp.backend.controller;
 
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -20,11 +21,13 @@ import com.medapp.backend.dto.RegisterRequest;
 import com.medapp.backend.model.Medicament;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.model.Sexe;
+import com.medapp.backend.repository.OrdonnanceRepository;
 import com.medapp.backend.repository.PatientRepository;
+import com.medapp.backend.repository.UserRepository;
 
 import org.testcontainers.junit.jupiter.Container;
 
-
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -47,6 +50,21 @@ public class OrdonnanceControllerIT {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private OrdonnanceRepository ordonnanceRepository;
+    
+    @Autowired
+    private PatientRepository patientRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @AfterEach
+    void nettoyageBase(){
+        ordonnanceRepository.deleteAll();
+        patientRepository.deleteAll();
+        userRepository.deleteAll();
+    }
 
    
     private String obtenirAccessToken(String email, Role role) throws Exception {
@@ -104,6 +122,53 @@ public class OrdonnanceControllerIT {
                     .andExpect(jsonPath("$.patientId").value(patientId))
                     .andExpect(jsonPath("$.statut").value("ACTIVE"))
                     .andExpect(jsonPath("$.dateEmission").value(LocalDate.now().toString()));
+    }
+
+    @Test
+    void creeOrdonnance_retourne403SiRoleDifferentauMedecin()throws Exception{
+
+        String tokenSecretaire = obtenirAccessToken("secretaire-test@medapp.com", Role.SECRETAIRE);
+        String patientId = creerPatientEtRecupererId(tokenSecretaire, "8776876786");
+
+        OrdonnanceRequest request = new OrdonnanceRequest(
+            patientId , LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Duliprane" , "1000mg" , "3x/jour" , "5 jours")) , 
+            null
+        );
+
+        mockMvc.perform(post("/api/ordonnances")
+                        .header("Authorization" , "Bearer " + tokenSecretaire)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isForbidden());
+
+    }
+
+    @Test
+    void obtenirOrdonnance_retourne200_siExiste()throws Exception{
+        String tokenMedecin = obtenirAccessToken("medecin-test@medapp.com", Role.MEDECIN);
+        String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876786");
+
+        OrdonnanceRequest request = new OrdonnanceRequest(
+            patientId , LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Duliprane" , "1000mg" , "3x/jour" , "5 jours")) , 
+            null
+        );
+
+        MvcResult result = mockMvc.perform(post("/api/ordonnances")
+                        .header("Authorization" , "Bearer " + tokenMedecin)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andReturn();
+
+        String ordonnanceId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(get("/api/ordonnances/" + ordonnanceId)
+                        .header("Authorization" , "Bearer " + tokenMedecin ))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(ordonnanceId))
+                    .andExpect(jsonPath("$.patientId").value(patientId));
     }
 
     
