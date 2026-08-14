@@ -3,7 +3,6 @@ package com.medapp.backend.service;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -66,6 +65,26 @@ public class OrdonnanceService {
     
         return ordonnanceRepository.findById(id)
             .orElseThrow(() -> new OrdonnanceIntrouvableException(id));
+    }
+
+    public Ordonnance modifierOrdonnance(String ordonnanceId, Ordonnance ordonnanceModifiee, String medecinId) {
+        Ordonnance ordonnance = ordonnanceRepository.findById(ordonnanceId)
+                    .orElseThrow(() -> new OrdonnanceIntrouvableException(ordonnanceId));
+
+        if(!ordonnance.getMedecinId().equals(medecinId)){
+            throw new AccesRefuseException(
+                "Seul le medecin prescripteur peut modifier cette ordonnance"
+            );
+        }
+
+        ordonnance.setDateValidite(ordonnanceModifiee.getDateValidite());
+        ordonnance.setMedicaments(ordonnanceModifiee.getMedicaments());
+        ordonnance.setRemarques(ordonnanceModifiee.getRemarques());
+
+        ordonnance.setStatut(StatutOrdonnanceCalculator.calculer(ordonnanceModifiee.getDateValidite(), ordonnanceModifiee.getStatut()));
+
+        return ordonnanceRepository.save(ordonnance);
+
     }
 
     

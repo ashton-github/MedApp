@@ -235,5 +235,76 @@ public class OrdonnanceServiceTest {
         verify(ordonnanceRepository , never()).save(any(Ordonnance.class));
     }
 
+    @Test
+    void modifierOrdonnance_reussit_siMedecinEstLePrescripteur(){
+        String id = "ordonnance-1";
+
+        Ordonnance ordonnanceExistante = new Ordonnance(
+            "patient-123", "medecin-1", LocalDate.now(), LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            StatutOrdonnance.ACTIVE, null
+        );
+        ordonnanceExistante.setId(id);
+
+        Ordonnance ordonnanceModifiee = new Ordonnance(
+            "patient-123", "medecin-1", LocalDate.now(), LocalDate.now().plusMonths(2),
+            List.of(new Medicament("Doliprane", "500mg", "2x/jour", "3 jours")),
+            null, "Dosage ajuste"
+        );
+
+        when(ordonnanceRepository.findById(id)).thenReturn(Optional.of(ordonnanceExistante));
+        when(ordonnanceRepository.save(any(Ordonnance.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Ordonnance result = ordonnanceService.modifierOrdonnance(id , ordonnanceModifiee , "medecin-1");
+
+        assertEquals("500mg", result.getMedicaments().get(0).getDosage());
+        assertEquals("Dosage ajuste", result.getRemarques());
+    }
+
+
+    @Test
+    void modifierOrdonnance_lanceException_siMedecinNestPasLePrescripteur(){
+
+         String id = "ordonnance-1";
+
+        Ordonnance ordonnanceExistante = new Ordonnance(
+            "patient-123", "medecin-1", LocalDate.now(), LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            StatutOrdonnance.ACTIVE, null
+        );
+        ordonnanceExistante.setId(id);
+
+        Ordonnance ordonnanceModifiee = new Ordonnance(
+            "patient-123", "medecin-1", LocalDate.now(), LocalDate.now().plusMonths(2),
+            List.of(new Medicament("Doliprane", "500mg", "2x/jour", "3 jours")),
+            null, "Dosage ajuste"
+        );
+
+        when(ordonnanceRepository.findById(id)).thenReturn(Optional.of(ordonnanceExistante));
+
+        assertThrows(AccesRefuseException.class,
+            () -> ordonnanceService.modifierOrdonnance(id , ordonnanceModifiee , "medecin-2")
+        );
+
+        verify(ordonnanceRepository,never()).save(any(Ordonnance.class));
+    }
+
+    @Test
+    void modifierOrdonnance_lanceException_siIdInexistant() {
+        String idInexistant = "id-inexistant";
+        Ordonnance ordonnanceModifiee = new Ordonnance(
+            "patient-123", "medecin-1", LocalDate.now(), LocalDate.now().plusMonths(2),
+            List.of(new Medicament("Doliprane", "500mg", "2x/jour", "3 jours")),
+            null, null
+        );
+
+        when(ordonnanceRepository.findById(idInexistant)).thenReturn(Optional.empty());
+
+        assertThrows(OrdonnanceIntrouvableException.class,
+            () -> ordonnanceService.modifierOrdonnance(idInexistant, ordonnanceModifiee, "medecin-1"));
+
+        verify(ordonnanceRepository, never()).save(any(Ordonnance.class));
+    }
+
     
 }
