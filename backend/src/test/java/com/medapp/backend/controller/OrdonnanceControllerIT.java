@@ -171,5 +171,31 @@ public class OrdonnanceControllerIT {
                     .andExpect(jsonPath("$.patientId").value(patientId));
     }
 
+    @Test
+    void obtenirHistorique_retourneOrdonnancesDuPatient()throws Exception{
+         String tokenMedecin = obtenirAccessToken("medecin-ordo-historique@medapp.com", Role.MEDECIN);
+        String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876787");
+
+        OrdonnanceRequest request = new OrdonnanceRequest(
+            patientId, LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            null
+        );
+
+        mockMvc.perform(post("/api/ordonnances")
+                        .header("Authorization", "Bearer " + tokenMedecin)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/ordonnances/patient/" + patientId)
+                        .header("Authorization" , "Bearer " + tokenMedecin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0].patientId").value(patientId));
+                        
+    }
+
+
     
 }

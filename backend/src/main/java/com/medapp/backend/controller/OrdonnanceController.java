@@ -7,11 +7,14 @@ import com.medapp.backend.dto.OrdonnanceRequest;
 import com.medapp.backend.dto.OrdonnanceResponse;
 import com.medapp.backend.mapper.OrdonnanceMapper;
 import com.medapp.backend.model.Ordonnance;
+import com.medapp.backend.model.StatutOrdonnance;
 import com.medapp.backend.security.UtilisateurAuthentifie;
 import com.medapp.backend.service.OrdonnanceService;
 
 import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
+
+import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +59,21 @@ public class OrdonnanceController {
 
         return ResponseEntity.status(HttpStatus.OK).body(ordonnanceMapper.versResponse(ordonnance));
     }
+
+    @GetMapping("/patient/{patientId}")
+    public ResponseEntity<List<OrdonnanceResponse>> obtenirHistorique(
+        @PathVariable String patientId,
+        @RequestParam (required = false) StatutOrdonnance statut) {
+        
+            List<Ordonnance> ordonnances = ordonnanceService.obtenirHistorique(patientId, statut);
+
+            List<OrdonnanceResponse> response = ordonnances.stream()
+                .map(ordonnanceMapper::versResponse)
+                .toList();
+
+            return ResponseEntity.ok(response);
+    }
+    
     
     
     
