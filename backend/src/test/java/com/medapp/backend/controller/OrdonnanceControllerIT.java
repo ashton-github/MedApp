@@ -28,7 +28,9 @@ import com.medapp.backend.repository.UserRepository;
 import org.testcontainers.junit.jupiter.Container;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -219,6 +221,34 @@ public class OrdonnanceControllerIT {
                         .header("Authorization" , "Bearer " + tokenMedecin))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].statut").value("ACTIVE"));
+    }
+
+    @Test
+    void archiverOrdonnance_retourne200_etPasseStatutAArchivee()throws Exception{
+        String tokenMedecin = obtenirAccessToken("medecin-ordo-historique@medapp.com", Role.MEDECIN);
+        String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876787");
+
+        OrdonnanceRequest request = new OrdonnanceRequest(
+            patientId, LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            null
+        );
+
+        MvcResult result = mockMvc.perform(post("/api/ordonnances")
+                        .header("Authorization", "Bearer " + tokenMedecin)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String ordonnanceId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(patch("/api/ordonnances/" + ordonnanceId + "/archiver")
+                        .header("Authorization" , "Bearer " + tokenMedecin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.statut").value("ARCHIVEE"));
+
+        
     }
 
 
