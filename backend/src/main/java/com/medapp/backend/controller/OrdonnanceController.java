@@ -76,6 +76,7 @@ public class OrdonnanceController {
     }
 
     @PatchMapping("/{id}/archiver")
+    @PreAuthorize("hasRole('MEDECIN')")
     public ResponseEntity<OrdonnanceResponse> archiverOrdonnance( @PathVariable String id  , @AuthenticationPrincipal UtilisateurAuthentifie utilisateur){
         Ordonnance ordonnance = ordonnanceService.archiverOrdonnance(id , utilisateur.id());
         

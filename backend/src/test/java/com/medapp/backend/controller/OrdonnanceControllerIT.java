@@ -265,6 +265,34 @@ public class OrdonnanceControllerIT {
         
     }
 
+
+    @Test
+    void archiverOrdonnance_retourne403_siMedecinNestPasLePrescripteur() throws Exception {
+        String tokenMedecin1 = obtenirAccessToken("medecin-ordo-archivage-1@medapp.com", Role.MEDECIN);
+        String patientId = creerPatientEtRecupererId(tokenMedecin1, "8776876791");
+
+        OrdonnanceRequest request = new OrdonnanceRequest(
+            patientId, LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            null
+        );
+
+        MvcResult creationResult = mockMvc.perform(post("/api/ordonnances")
+                        .header("Authorization", "Bearer " + tokenMedecin1)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String ordonnanceId = objectMapper.readTree(creationResult.getResponse().getContentAsString()).get("id").asText();
+
+        String tokenMedecin2 = obtenirAccessToken("medecin-ordo-archivage-2@medapp.com", Role.MEDECIN);
+
+        mockMvc.perform(patch("/api/ordonnances/" + ordonnanceId + "/archiver")
+                        .header("Authorization", "Bearer " + tokenMedecin2))
+                .andExpect(status().isForbidden());
+    }
+
     
 }
 
