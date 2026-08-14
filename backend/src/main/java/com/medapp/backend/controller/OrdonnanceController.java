@@ -76,8 +76,8 @@ public class OrdonnanceController {
     }
 
     @PatchMapping("/{id}/archiver")
-    public ResponseEntity<OrdonnanceResponse> archiverOrdonnance( @PathVariable String id ){
-        Ordonnance ordonnance = ordonnanceService.archiverOrdonnance(id);
+    public ResponseEntity<OrdonnanceResponse> archiverOrdonnance( @PathVariable String id  , @AuthenticationPrincipal UtilisateurAuthentifie utilisateur){
+        Ordonnance ordonnance = ordonnanceService.archiverOrdonnance(id , utilisateur.id());
         
         return ResponseEntity.status(HttpStatus.OK).body(ordonnanceMapper.versResponse(ordonnance));
     }

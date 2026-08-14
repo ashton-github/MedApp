@@ -1,0 +1,8 @@
+package com.medapp.backend.exception;
+
+public class AccesRefuseException extends RuntimeException{
+ 
+    public AccesRefuseException(String message){
+        super(message);
+    }
+}

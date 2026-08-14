@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.medapp.backend.exception.AccesRefuseException;
 import com.medapp.backend.exception.OrdonnanceIntrouvableException;
 import com.medapp.backend.exception.PatientIntrouvableException;
 import com.medapp.backend.model.Ordonnance;
@@ -36,11 +37,13 @@ public class OrdonnanceService {
         return ordonnanceRepository.save(ordonnance);
     }
 
-    public Ordonnance archiverOrdonnance(String ordonnanceId) {
+    public Ordonnance archiverOrdonnance(String ordonnanceId , String medecinConnected) {
         Ordonnance ordonnance = ordonnanceRepository.findById(ordonnanceId)
                     .orElseThrow(() -> new OrdonnanceIntrouvableException(ordonnanceId));
 
-        
+        if(!ordonnance.getMedecinId().equals(medecinConnected)){
+            throw new AccesRefuseException("Seul le medecin prescripteur peut archiver cette ordonnance.");
+        }
 
         ordonnance.setStatut(StatutOrdonnance.ARCHIVEE);
         return ordonnanceRepository.save(ordonnance);

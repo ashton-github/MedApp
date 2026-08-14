@@ -69,6 +69,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message" , ex.getMessage()));
     }
 
+    @ExceptionHandler(AccesRefuseException.class)
+    public ResponseEntity<Map<String , String >> handleAccessRefuse(AccesRefuseException ex){
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message" , ex.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleExceptionInattendue(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -18,15 +18,25 @@ import com.medapp.backend.dto.LoginRequest;
 import com.medapp.backend.dto.OrdonnanceRequest;
 import com.medapp.backend.dto.PatientRequest;
 import com.medapp.backend.dto.RegisterRequest;
+import com.medapp.backend.exception.AccesRefuseException;
 import com.medapp.backend.model.Medicament;
+import com.medapp.backend.model.Ordonnance;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.model.Sexe;
+import com.medapp.backend.model.StatutOrdonnance;
 import com.medapp.backend.repository.OrdonnanceRepository;
 import com.medapp.backend.repository.PatientRepository;
 import com.medapp.backend.repository.UserRepository;
+import com.medapp.backend.service.OrdonnanceService;
+
 
 import org.testcontainers.junit.jupiter.Container;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -36,6 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -51,6 +62,9 @@ public class OrdonnanceControllerIT {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired 
+    private OrdonnanceService ordonnanceService;
 
     @Autowired
     private OrdonnanceRepository ordonnanceRepository;
@@ -251,6 +265,13 @@ public class OrdonnanceControllerIT {
         
     }
 
-
     
 }
+
+
+
+
+
+
+
+

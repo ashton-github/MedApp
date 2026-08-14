@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.internal.matchers.Or;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.medapp.backend.exception.AccesRefuseException;
 import com.medapp.backend.exception.OrdonnanceIntrouvableException;
 import com.medapp.backend.exception.PatientIntrouvableException;
 import com.medapp.backend.model.Medicament;
@@ -147,7 +148,7 @@ public class OrdonnanceServiceTest {
         when(ordonnanceRepository.findById(id)).thenReturn(Optional.of(ordonnance));
         when(ordonnanceRepository.save(any(Ordonnance.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Ordonnance result = ordonnanceService.archiverOrdonnance(id);
+        Ordonnance result = ordonnanceService.archiverOrdonnance(id , "medecin-1");
 
         assertEquals(StatutOrdonnance.ARCHIVEE, result.getStatut());
     }
@@ -159,7 +160,7 @@ public class OrdonnanceServiceTest {
         when(ordonnanceRepository.findById(idInexistant)).thenReturn(Optional.empty());
 
         assertThrows(OrdonnanceIntrouvableException.class,
-            () -> ordonnanceService.archiverOrdonnance(idInexistant));
+            () -> ordonnanceService.archiverOrdonnance(idInexistant , "medecin-1") );
 
         verify(ordonnanceRepository , never()).save(any(Ordonnance.class));
     }
@@ -212,6 +213,26 @@ public class OrdonnanceServiceTest {
 
         assertEquals(1, resultat.size());
         assertEquals("ordo-active", resultat.get(0).getId());
+    }
+
+
+      @Test
+    void archiverOrdonnance_lanceException_siMedecinNestPasLePrescripteur(){
+        String id = "ordonnance-1";
+        Ordonnance ordonnance = new Ordonnance(
+            "patient-123", "medecin-1", LocalDate.now(), LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            StatutOrdonnance.ACTIVE, null
+        );
+        ordonnance.setId(id);
+
+        when(ordonnanceRepository.findById(id)).thenReturn(Optional.of(ordonnance));
+
+        assertThrows(AccesRefuseException.class, 
+            () -> ordonnanceService.archiverOrdonnance(id , "medecin-2")
+        );
+
+        verify(ordonnanceRepository , never()).save(any(Ordonnance.class));
     }
 
     
