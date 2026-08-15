@@ -191,6 +191,7 @@ public class OrdonnanceServiceTest {
         recente.setId("ordo-2");
 
         //repository returns them out of order , service must sort 
+        when(patientRepository.findById(patientId)).thenReturn(Optional.of(mock(Patient.class)));
         when(ordonnanceRepository.findByPatientId(patientId)).thenReturn(List.of(ancienne , recente));
 
         List<Ordonnance> result = ordonnanceService.obtenirHistorique(patientId , null);
@@ -212,8 +213,8 @@ public class OrdonnanceServiceTest {
         );
         active.setId("ordo-active");
 
-        when(ordonnanceRepository.findByPatientIdAndStatut(patientId, StatutOrdonnance.ACTIVE))
-            .thenReturn(List.of(active));
+        when(patientRepository.findById(patientId)).thenReturn(Optional.of(mock(Patient.class)));
+        when(ordonnanceRepository.findByPatientIdAndStatut(patientId, StatutOrdonnance.ACTIVE)).thenReturn(List.of(active));
 
         List<Ordonnance> resultat = ordonnanceService.obtenirHistorique(patientId, StatutOrdonnance.ACTIVE);
 
