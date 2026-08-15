@@ -18,12 +18,9 @@ import com.medapp.backend.dto.LoginRequest;
 import com.medapp.backend.dto.OrdonnanceRequest;
 import com.medapp.backend.dto.PatientRequest;
 import com.medapp.backend.dto.RegisterRequest;
-import com.medapp.backend.exception.AccesRefuseException;
 import com.medapp.backend.model.Medicament;
-import com.medapp.backend.model.Ordonnance;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.model.Sexe;
-import com.medapp.backend.model.StatutOrdonnance;
 import com.medapp.backend.repository.OrdonnanceRepository;
 import com.medapp.backend.repository.PatientRepository;
 import com.medapp.backend.repository.UserRepository;
@@ -32,11 +29,6 @@ import com.medapp.backend.service.OrdonnanceService;
 
 import org.testcontainers.junit.jupiter.Container;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -46,7 +38,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -293,6 +284,74 @@ public class OrdonnanceControllerIT {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void modifierOrdonnance_retourne200_siMedecinEstLePrescripteur()throws Exception{
+        String tokenMedecin = obtenirAccessToken("medecin-ordo-modif@medapp.com", Role.MEDECIN);
+        String patientId = creerPatientEtRecupererId(tokenMedecin, "879765643432326");
+
+        OrdonnanceRequest creationRequest = new OrdonnanceRequest(
+            patientId, LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            null
+        );
+
+        MvcResult result = mockMvc.perform(post("/api/ordonnances")
+                    .header("Authorization","Bearer " + tokenMedecin)
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(creationRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String ordonnanceId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+        OrdonnanceRequest modificationRequest = new OrdonnanceRequest(
+            patientId, LocalDate.now().plusMonths(2),
+            List.of(new Medicament("Doliprane", "500mg", "2x/jour", "3 jours")),
+            "Dosage ajuste"
+        );
+
+        mockMvc.perform(put("/api/ordonnances/" + ordonnanceId)
+                    .header("Authorization", "Bearer " + tokenMedecin)
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(modificationRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.medicaments[0].dosage").value("500mg"))
+                .andExpect(jsonPath("$.remarques").value("Dosage ajuste"));
+    }
+
+
+    @Test
+    void modifierOrdonnance_retourne403_siMedecinNestPasLePrescripteur() throws Exception{
+        String tokenMedecin = obtenirAccessToken("medecin-ordo-modif@medapp.com", Role.MEDECIN);
+        String patientId = creerPatientEtRecupererId(tokenMedecin, "879765643432326");
+
+        OrdonnanceRequest creationRequest = new OrdonnanceRequest(
+            patientId, LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            null
+        );
+
+        MvcResult result = mockMvc.perform(post("/api/ordonnances")
+                    .header("Authorization","Bearer " + tokenMedecin)
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(creationRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String ordonnanceId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+        OrdonnanceRequest modificationRequest = new OrdonnanceRequest(
+            patientId, LocalDate.now().plusMonths(2),
+            List.of(new Medicament("Doliprane", "500mg", "2x/jour", "3 jours")),
+            "Dosage ajuste"
+        );
+
+        String tokenMedecin2 = obtenirAccessToken("medecin-ordo-modif-2@medapp.com", Role.MEDECIN);
+
+        mockMvc.perform(put("/api/ordonnances/" + ordonnanceId)
+                    .header("Authorization", "Bearer " + tokenMedecin2)
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(modificationRequest)))
+                .andExpect(status().isForbidden());
+    }
     
 }
 

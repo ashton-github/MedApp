@@ -25,6 +25,8 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PutMapping;
+
 
 
 
@@ -81,6 +83,19 @@ public class OrdonnanceController {
         Ordonnance ordonnance = ordonnanceService.archiverOrdonnance(id , utilisateur.id());
         
         return ResponseEntity.status(HttpStatus.OK).body(ordonnanceMapper.versResponse(ordonnance));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('MEDECIN')")
+    public ResponseEntity<OrdonnanceResponse> modifierOrdonnance(
+            @PathVariable String id,
+            @Valid @RequestBody OrdonnanceRequest request,
+            @AuthenticationPrincipal UtilisateurAuthentifie utilisateur){
+        
+                Ordonnance ordonnanceModifiee = ordonnanceMapper.versEntite(request, utilisateur.id());
+                Ordonnance ordonnance = ordonnanceService.modifierOrdonnance(id, ordonnanceModifiee, utilisateur.id());
+
+                return ResponseEntity.ok(ordonnanceMapper.versResponse(ordonnance));
     }
     
     
