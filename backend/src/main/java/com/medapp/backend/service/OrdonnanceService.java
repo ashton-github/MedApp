@@ -64,6 +64,9 @@ public class OrdonnanceService {
     }
 
     public List<Ordonnance> obtenirHistorique(String patientId , StatutOrdonnance statut) {
+        patientRepository.findById(patientId)
+            .orElseThrow(() -> new PatientIntrouvableException(patientId));
+            
         List<Ordonnance> ordonnances = (statut != null)
         ? ordonnanceRepository.findByPatientIdAndStatut(patientId, statut)
         : ordonnanceRepository.findByPatientId(patientId);

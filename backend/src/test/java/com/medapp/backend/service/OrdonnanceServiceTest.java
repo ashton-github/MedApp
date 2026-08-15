@@ -217,6 +217,15 @@ public class OrdonnanceServiceTest {
         assertEquals("ordo-active", resultat.get(0).getId());
     }
 
+    @Test
+    void obtenirHistorique_lanceException_siPatientInexistant() {
+        String patientIdInexistant = "patient-inexistant";
+        when(patientRepository.findById(patientIdInexistant)).thenReturn(Optional.empty());
+
+        assertThrows(PatientIntrouvableException.class,
+            () -> ordonnanceService.obtenirHistorique(patientIdInexistant, null));
+    }
+
 
       @Test
     void archiverOrdonnance_lanceException_siMedecinNestPasLePrescripteur(){
