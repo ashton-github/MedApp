@@ -5,6 +5,7 @@ const currentScreen = ref(screens.login)
 const authUser = ref(null)
 const selectedPatientId = ref(null)  // ID of the patient currently displayed in detail view
 const patientToEdit = ref(null)
+const ordonnanceToEdit = ref(null)
 
 const authForm = ref({
   email: '',
@@ -43,7 +44,15 @@ export function useMedAppState() {
     showScreen(screens.patientForm)
   }
 
-  const openNewOrdonnance = () => {
+  const openNewOrdonnance = (patientId = null) => {
+    ordonnanceToEdit.value = null
+    selectedPatientId.value = patientId ?? null
+    showScreen(screens.ordonnanceForm)
+  }
+
+  const openEditOrdonnance = (ordonnance) => {
+    ordonnanceToEdit.value = ordonnance
+    selectedPatientId.value = ordonnance?.patientId ?? null
     showScreen(screens.ordonnanceForm)
   }
 
@@ -53,12 +62,14 @@ export function useMedAppState() {
     authForm,
     selectedPatientId,
     patientToEdit,
+    ordonnanceToEdit,
     showScreen,
     signIn,
     logout,
     editPatient,
     viewPatient,
     openNewPatient,
-    openNewOrdonnance
+    openNewOrdonnance,
+    openEditOrdonnance
   }
 }

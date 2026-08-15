@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
   ChevronLeft,
+  ChevronRight,
   CheckCircle2,
   Check,
   Search,
@@ -19,26 +20,87 @@ import { useOrdonnanceStore } from '../../stores/ordonnanceStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
 
-const { showScreen } = useMedAppState()
+const { showScreen, authUser } = useMedAppState()
 const patientStore = usePatientStore()
 const ordonnanceStore = useOrdonnanceStore()
+const { selectedPatientId, ordonnanceToEdit } = useMedAppState()
 
 const pq = ref('')
 const sel = ref(null)
 const showSug = ref(false)
-const meds = ref([{ name: '', dosage: '', duration: '' }])
+const meds = ref([{ name: '', dosage: '', frequency: '', duration: '' }])
 const notes = ref('')
 const submitting = ref(false)
 const done = ref(false)
 
+const isEditMode = computed(() => Boolean(ordonnanceToEdit.value?.id))
+
 const d = new Date()
 d.setMonth(d.getMonth() + 1)
 const validityDate = ref(d.toISOString().split('T')[0])
+const prescriptionDate = ref(new Date().toISOString().split('T')[0])
 
-// Fetch patients if empty
-if (patientStore.patients.length === 0) {
-  patientStore.fetchPatients()
+const goBackToList = () => {
+  ordonnanceToEdit.value = null
+  showScreen(screens.ordonnances)
 }
+
+const openPreview = () => {
+  ordonnanceStore.currentOrdonnance = {
+    id: ordonnanceToEdit.value?.id || 'brouillon',
+    patientId: sel.value?.id || '',
+    issueDate: prescriptionDate.value,
+    validityDate: validityDate.value,
+    status: 'ACTIVE',
+    notes: notes.value || '',
+    medications: meds.value.map((m) => ({
+      name: m.name || '',
+      dosage: m.dosage || '',
+      frequency: m.frequency || '',
+      duration: m.duration || ''
+    })),
+    patientName: sel.value ? `${sel.value.firstName} ${sel.value.lastName}` : '',
+    doctorName: authUser.value?.email
+      ? `Dr. ${authUser.value.email.split('@')[0].charAt(0).toUpperCase() + authUser.value.email.split('@')[0].slice(1)}`
+      : ''
+  }
+  showScreen(screens.pdfPreview)
+}
+
+onMounted(async () => {
+  if (patientStore.patients.length === 0) {
+    await patientStore.fetchPatients()
+  }
+
+  if (isEditMode.value) {
+    const current = ordonnanceToEdit.value
+    sel.value = patientStore.patients.find(p => p.id === current.patientId) || null
+    if (!sel.value) {
+      await patientStore.getPatientById(current.patientId)
+      sel.value = patientStore.currentPatient
+    }
+    validityDate.value = current.validityDate
+    prescriptionDate.value = current.issueDate || prescriptionDate.value
+    notes.value = current.notes || ''
+    meds.value = (current.medications?.length
+      ? current.medications.map((m) => ({
+          name: m.name || '',
+          dosage: m.dosage || '',
+          frequency: m.frequency || '',
+          duration: m.duration || ''
+        }))
+      : [{ name: '', dosage: '', frequency: '', duration: '' }])
+    return
+  }
+
+  if (selectedPatientId.value) {
+    sel.value = patientStore.patients.find(p => p.id === selectedPatientId.value) || null
+    if (!sel.value) {
+      await patientStore.getPatientById(selectedPatientId.value)
+      sel.value = patientStore.currentPatient
+    }
+  }
+})
 
 const sug = computed(() => {
   if (pq.value.length < 2) return []
@@ -48,21 +110,33 @@ const sug = computed(() => {
 const addMed = () => meds.value.push({ name: '', dosage: '', frequency: '', duration: '' })
 const rmMed = (i) => meds.value.splice(i, 1)
 
+const doneTitle = computed(() => isEditMode.value ? 'Ordonnance modifiée !' : 'Ordonnance créée !')
+const doneSubtitle = computed(() => isEditMode.value ? 'Mise à jour enregistrée. Redirection en cours…' : 'Redirection en cours…')
+const pageTitle = computed(() => isEditMode.value ? 'Modifier ordonnance' : 'Nouvelle ordonnance')
+const submitLabel = computed(() => isEditMode.value ? 'Mettre à jour l\'ordonnance' : 'Créer l\'ordonnance')
+const submittingLabel = computed(() => isEditMode.value ? 'Mise à jour…' : 'Création…')
+
 const submit = async () => {
   submitting.value = true
   
   try {
-    await ordonnanceStore.createOrdonnance({
+    const payload = {
       patientId: sel.value.id,
       validityDate: validityDate.value,
       status: 'ACTIVE',
       notes: notes.value,
       medications: meds.value
-    })
+    }
+
+    if (isEditMode.value) {
+      await ordonnanceStore.updateOrdonnance(ordonnanceToEdit.value.id, payload)
+    } else {
+      await ordonnanceStore.createOrdonnance(payload)
+    }
     
     done.value = true
     setTimeout(() => {
-      showScreen(screens.ordonnances)
+      goBackToList()
     }, 1400)
   } catch (err) {
     // Error handled by store
@@ -76,8 +150,8 @@ const AVATAR_COLORS = [
   "bg-violet-100 text-violet-700", "bg-amber-100 text-amber-700",
   "bg-rose-100 text-rose-700", "bg-cyan-100 text-cyan-700",
 ]
-const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]
-const initials = (f, l) => `${f[0]}${l[0]}`.toUpperCase()
+const avatarColor = (name = '') => AVATAR_COLORS[(name?.charCodeAt?.(0) ?? 0) % AVATAR_COLORS.length]
+const initials = (f = '', l = '') => `${f?.[0] ?? '?'}${l?.[0] ?? '?'}`.toUpperCase()
 </script>
 
 <template>
@@ -87,18 +161,18 @@ const initials = (f, l) => `${f[0]}${l[0]}`.toUpperCase()
     >
       <CheckCircle2 class="w-10 h-10 text-emerald-600" />
     </div>
-    <h2 class="text-xl font-bold text-foreground">Ordonnance créée !</h2>
-    <p class="text-muted-foreground text-sm mt-1">Redirection en cours…</p>
+    <h2 class="text-xl font-bold text-foreground">{{ doneTitle }}</h2>
+    <p class="text-muted-foreground text-sm mt-1">{{ doneSubtitle }}</p>
   </div>
 
   <div v-else class="p-6 space-y-6">
     <div>
       <div class="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-        <button @click="showScreen(screens.ordonnances)" class="hover:text-foreground transition-colors">Ordonnances</button>
+        <button @click="goBackToList" class="hover:text-foreground transition-colors">Ordonnances</button>
         <ChevronRight class="w-3 h-3" />
-        <span class="text-foreground">Nouvelle ordonnance</span>
+        <span class="text-foreground">{{ pageTitle }}</span>
       </div>
-      <h1 class="text-2xl font-bold text-foreground">Nouvelle ordonnance</h1>
+      <h1 class="text-2xl font-bold text-foreground">{{ pageTitle }}</h1>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -106,7 +180,11 @@ const initials = (f, l) => `${f[0]}${l[0]}`.toUpperCase()
         <div class="rounded-2xl border border-border bg-card p-5">
           <h2 class="font-semibold text-foreground mb-4">Patient</h2>
           <template v-if="!sel">
-            <div class="relative">
+            <div v-if="isEditMode" class="p-3 border border-border bg-muted/40 rounded-xl flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 class="w-4 h-4 animate-spin" />
+              Chargement du patient lié à l'ordonnance…
+            </div>
+            <div v-else class="relative">
               <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input v-model="pq" @focus="showSug = true" @blur="setTimeout(() => showSug = false, 200)" placeholder="Rechercher un patient…" class="w-full h-10 pl-9 pr-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
               <div v-if="showSug && sug.length > 0" class="absolute left-0 right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-lg z-10 py-1 max-h-60 overflow-y-auto">
@@ -130,10 +208,10 @@ const initials = (f, l) => `${f[0]}${l[0]}`.toUpperCase()
                 </div>
                 <div>
                   <p class="font-medium text-foreground text-sm">{{ sel.firstName }} {{ sel.lastName }}</p>
-                  <p class="text-xs text-muted-foreground">Patient sélectionné</p>
+                  <p class="text-xs text-muted-foreground">{{ isEditMode ? 'Patient lié à l\'ordonnance' : 'Patient sélectionné' }}</p>
                 </div>
               </div>
-              <button @click="sel = null" class="p-1.5 rounded-lg hover:bg-white dark:hover:bg-background text-muted-foreground transition-colors"><Trash2 class="w-4 h-4 text-red-500" /></button>
+              <button v-if="!isEditMode" @click="sel = null" class="p-1.5 rounded-lg hover:bg-white dark:hover:bg-background text-muted-foreground transition-colors"><Trash2 class="w-4 h-4 text-red-500" /></button>
             </div>
             <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900 rounded-xl flex items-start gap-2 text-xs text-amber-800 dark:text-amber-400">
               <AlertCircle class="w-4 h-4 shrink-0" />
@@ -149,7 +227,7 @@ const initials = (f, l) => `${f[0]}${l[0]}`.toUpperCase()
               <label class="text-xs font-medium text-foreground">Date de prescription</label>
               <div class="relative">
                 <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type="date" :value="new Date().toISOString().split('T')[0]" class="w-full h-9 pl-9 pr-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground" />
+                <input type="date" :value="prescriptionDate" disabled class="w-full h-9 pl-9 pr-3 text-sm bg-background border border-border rounded-xl text-foreground opacity-70 cursor-not-allowed" />
               </div>
             </div>
             <div class="space-y-1.5">
@@ -198,15 +276,15 @@ const initials = (f, l) => `${f[0]}${l[0]}`.toUpperCase()
           <textarea v-model="notes" placeholder="Recommandations hygiéno-diététiques, précautions particulières…" rows="3" class="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground resize-none" />
         </div>
         <div class="flex gap-3">
-          <button @click="showScreen(screens.ordonnances)" class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-4 py-2 text-sm gap-2">
+          <button @click="goBackToList" class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-4 py-2 text-sm gap-2">
             Annuler
           </button>
           <button @click="submit" :disabled="!sel || meds[0].name === '' || submitting" class="flex-1 bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 px-4 py-2 text-sm gap-2">
             <template v-if="submitting">
-              <Loader2 class="w-4 h-4 animate-spin" /> Création…
+              <Loader2 class="w-4 h-4 animate-spin" /> {{ submittingLabel }}
             </template>
             <template v-else>
-              <FileCheck class="w-4 h-4" /> Créer l'ordonnance
+              <FileCheck class="w-4 h-4" /> {{ submitLabel }}
             </template>
           </button>
         </div>
@@ -222,7 +300,7 @@ const initials = (f, l) => `${f[0]}${l[0]}`.toUpperCase()
             </div>
             <div>
               <p class="text-xs text-muted-foreground">Date</p>
-              <p class="font-medium text-foreground mt-0.5 font-mono">{{ new Date().toLocaleDateString("fr-FR") }}</p>
+              <p class="font-medium text-foreground mt-0.5 font-mono">{{ new Date(prescriptionDate).toLocaleDateString("fr-FR") }}</p>
             </div>
             <div>
               <p class="text-xs text-muted-foreground mb-1.5">Médicaments ({{ meds.filter(m => m.name).length }})</p>
@@ -239,7 +317,7 @@ const initials = (f, l) => `${f[0]}${l[0]}`.toUpperCase()
             </div>
           </div>
         </div>
-        <button @click="showScreen(screens.pdfPreview)" class="w-full border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-2 text-sm gap-2">
+        <button @click="openPreview" class="w-full border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-2 text-sm gap-2">
           <Eye class="w-4 h-4" /> Aperçu PDF
         </button>
       </div>

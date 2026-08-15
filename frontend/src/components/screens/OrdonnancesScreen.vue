@@ -4,6 +4,7 @@ import {
   FileText,
   Search,
   Plus,
+  Pencil,
   Eye,
   Download,
   Archive,
@@ -15,7 +16,7 @@ import { usePatientStore } from '../../stores/patientStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
 
-const { authUser, openNewOrdonnance, showScreen } = useMedAppState()
+const { authUser, openNewOrdonnance, openEditOrdonnance, showScreen } = useMedAppState()
 const ordonnanceStore = useOrdonnanceStore()
 const patientStore = usePatientStore()
 
@@ -162,6 +163,12 @@ const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.l
               <div class="flex gap-1 shrink-0">
                 <button @click="ordonnanceStore.currentOrdonnance = rx; showScreen(screens.pdfPreview)" class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="Aperçu"><Eye class="w-4 h-4" /></button>
                 <button @click="ordonnanceStore.downloadPdf(rx.id)" class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="Télécharger PDF"><Download class="w-4 h-4" /></button>
+                <button
+                  v-if="rx.status !== 'ARCHIVED' && authUser?.role === 'medecin'"
+                  @click="openEditOrdonnance(rx)"
+                  class="p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-muted-foreground hover:text-blue-600 transition-colors"
+                  title="Modifier"
+                ><Pencil class="w-4 h-4" /></button>
                 <button
                   v-if="rx.status !== 'ARCHIVED' && authUser?.role === 'medecin'"
                   @click="archiveId = rx.id"
