@@ -1,10 +1,16 @@
 package com.medapp.backend.model;
 
+import jakarta.validation.constraints.NotBlank;
 
 public class Medicament {
+
+    @NotBlank
     private String nom ;
+    @NotBlank
     private String dosage;
+    @NotBlank
     private String frequence;
+    @NotBlank
     private String duree;
 
     public Medicament(){}

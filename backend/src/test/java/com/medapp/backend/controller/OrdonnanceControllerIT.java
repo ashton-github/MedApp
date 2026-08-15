@@ -154,6 +154,42 @@ public class OrdonnanceControllerIT {
     }
 
     @Test
+    void creerOrdonnance_retourne400_siListeMedicamentsVide() throws Exception {
+        String tokenMedecin = obtenirAccessToken("medecin-ordo-validation@medapp.com", Role.MEDECIN);
+        String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876796");
+
+        OrdonnanceRequest request = new OrdonnanceRequest(
+            patientId, LocalDate.now().plusMonths(1),
+            List.of(),
+            null
+        );
+
+        mockMvc.perform(post("/api/ordonnances")
+                        .header("Authorization", "Bearer " + tokenMedecin)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void creerOrdonnance_retourne400_siMedicamentAChampVide() throws Exception {
+        String tokenMedecin = obtenirAccessToken("medecin-ordo-validation-2@medapp.com", Role.MEDECIN);
+        String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876797");
+
+        OrdonnanceRequest request = new OrdonnanceRequest(
+            patientId, LocalDate.now().plusMonths(1),
+            List.of(new Medicament("", "1000mg", "3x/jour", "5 jours")),
+            null
+        );
+
+        mockMvc.perform(post("/api/ordonnances")
+                        .header("Authorization", "Bearer " + tokenMedecin)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void obtenirOrdonnance_retourne200_siExiste()throws Exception{
         String tokenMedecin = obtenirAccessToken("medecin-test@medapp.com", Role.MEDECIN);
         String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876786");
