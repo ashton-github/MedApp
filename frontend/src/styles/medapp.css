@@ -81,3 +81,42 @@
     @apply hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800/60 transition-all duration-200;
   }
 }
+
+/* ─── Print Mode ─────────────────────────────────────────────────────────────
+   When the user triggers window.print() from PdfPreviewScreen,
+   we hide every part of the app layout EXCEPT the ordonnance document card.
+   The [data-print-target] attribute is added to the ordonnance container.
+──────────────────────────────────────────────────────────────────────────── */
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  /* Hide everything */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Show only the ordonnance card */
+  [data-print-target],
+  [data-print-target] * {
+    visibility: visible;
+  }
+
+  /* Fill the entire page */
+  [data-print-target] {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    display: flex;
+    flex-direction: column;
+  }
+}

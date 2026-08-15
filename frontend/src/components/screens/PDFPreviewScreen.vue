@@ -56,11 +56,116 @@ const p = computed(() => {
 })
 
 const fmt = (d) => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : ''
+
+const printOrdonnance = () => {
+  const el = document.querySelector('[data-print-target]')
+  if (!el) return
+
+  const win = window.open('', '_blank', 'width=900,height=1200')
+  win.document.write(`
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Ordonnance - ${rx.value.id}</title>
+      <style>
+        @page { size: A4; margin: 12mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: white; color: #0F172A; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .card { width: 100%; }
+        .header { background: linear-gradient(to right, #2563eb, #1d4ed8); padding: 24px; color: white; display: flex; justify-content: space-between; align-items: flex-start; }
+        .header-left { display: flex; flex-direction: column; gap: 2px; }
+        .header-logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; }
+        .header-sub { color: #bfdbfe; font-size: 13px; }
+        .header-right { text-align: right; font-size: 13px; }
+        .header-right p { color: #bfdbfe; font-size: 12px; }
+        .body { padding: 32px; }
+        .row-between { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px; }
+        .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 4px; }
+        .value { font-weight: 700; font-size: 15px; }
+        .patient-box { background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+        .grid2 .label { font-size: 11px; color: #64748b; margin-bottom: 2px; }
+        .grid2 .value { font-size: 13px; font-weight: 600; }
+        .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 12px; }
+        .med-item { display: flex; gap: 12px; align-items: flex-start; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+        .med-icon { width: 28px; height: 28px; background: #dbeafe; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #2563eb; font-size: 14px; }
+        .med-name { font-weight: 600; font-size: 13px; }
+        .med-detail { font-size: 12px; color: #64748b; margin-top: 2px; }
+        .notes-box { border: 1px solid #fcd34d; background: #fffbeb; border-radius: 10px; padding: 14px; margin-top: 16px; }
+        .notes-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #92400e; margin-bottom: 4px; }
+        .notes-text { font-size: 13px; color: #78350f; }
+        .footer { display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #e2e8f0; margin-top: 24px; padding-top: 16px; }
+        .sig-box { width: 140px; height: 64px; border: 2px dashed #e2e8f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #94a3b8; margin-bottom: 6px; }
+        .sig-name { font-size: 11px; font-weight: 600; color: #64748b; }
+        .legal { font-size: 11px; text-align: center; color: #94a3b8; border-top: 1px solid #e2e8f0; margin-top: 16px; padding-top: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="header">
+          <div class="header-left">
+            <div class="header-logo">✚ MedApp</div>
+            <span class="header-sub">Ordonnance médicale officielle</span>
+          </div>
+          <div class="header-right">
+            <strong>${rx.value.doctorName}</strong>
+            <p>Médecin</p>
+          </div>
+        </div>
+        <div class="body">
+          <div class="row-between">
+            <div><div class="label">N° Ordonnance</div><div class="value">${rx.value.id.toUpperCase()}</div></div>
+            <div style="text-align:right"><div class="label">Date d'émission</div><div class="value">${fmt(rx.value.issueDate)}</div></div>
+          </div>
+          <div class="patient-box">
+            <div class="section-title">Informations patient</div>
+            <div class="grid2">
+              <div><div class="label">Nom complet</div><div class="value">${p.value.firstName} ${p.value.lastName}</div></div>
+              <div><div class="label">Date de naissance</div><div class="value">${fmt(p.value.birthDate)}</div></div>
+              <div><div class="label">Téléphone</div><div class="value">${p.value.phone || 'Non renseigné'}</div></div>
+            </div>
+          </div>
+          <div class="section-title">Prescriptions</div>
+          ${(rx.value.medications || []).map(m => `
+            <div class="med-item">
+              <div class="med-icon">💊</div>
+              <div>
+                <div class="med-name">${m.name}</div>
+                <div class="med-detail">${[m.dosage, m.frequency, m.duration].filter(Boolean).join(' · ')}</div>
+              </div>
+            </div>
+          `).join('')}
+          ${rx.value.notes ? `
+            <div class="notes-box">
+              <div class="notes-label">Instructions</div>
+              <div class="notes-text">${rx.value.notes}</div>
+            </div>
+          ` : ''}
+          <div class="footer">
+            <div>
+              <div class="sig-box">Signature du médecin</div>
+              <div class="sig-name">${rx.value.doctorName}</div>
+            </div>
+          </div>
+          <div class="legal">Document généré par MedApp · Conforme à la réglementation française en matière de prescription médicale électronique</div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `)
+  win.document.close()
+  win.focus()
+  setTimeout(() => {
+    win.print()
+    win.close()
+  }, 400)
+}
 </script>
 
 <template>
-  <div class="p-6 space-y-4">
-    <div class="flex items-center justify-between flex-wrap gap-3">
+  <div class="p-6 space-y-4 print:p-0 print:m-0">
+    <div class="flex items-center justify-between flex-wrap gap-3 print:hidden">
       <div class="flex items-center gap-2 text-sm text-muted-foreground">
         <button @click="showScreen(screens.ordonnances)" class="hover:text-foreground">Ordonnances</button>
         <ChevronRight class="w-3 h-3" />
@@ -70,15 +175,15 @@ const fmt = (d) => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit",
         <button @click="ordonnanceStore.downloadPdf(rx.id)" class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
           <Download class="w-4 h-4" /> Exporter PDF
         </button>
-        <button onclick="window.print()" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
+        <button @click="printOrdonnance" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
           <Printer class="w-4 h-4" /> Imprimer
         </button>
       </div>
     </div>
 
-    <div class="flex justify-center">
-      <div v-motion :initial="{ opacity: 0, y: 16 }" :enter="{ opacity: 1, y: 0 }" class="w-full max-w-2xl">
-        <div class="rounded-2xl border border-border overflow-hidden shadow-2xl bg-card">
+    <div class="flex justify-center print:block print:w-full">
+      <div v-motion :initial="{ opacity: 0, y: 16 }" :enter="{ opacity: 1, y: 0 }" class="w-full max-w-2xl print:max-w-none print:w-full">
+        <div data-print-target class="rounded-2xl border border-border overflow-hidden shadow-2xl bg-card print:border-none print:shadow-none print:rounded-none">
           <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
             <div class="flex items-start justify-between">
               <div>
