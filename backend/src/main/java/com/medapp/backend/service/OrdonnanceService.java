@@ -6,14 +6,22 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfWriter;
 import com.medapp.backend.exception.AccesRefuseException;
 import com.medapp.backend.exception.OrdonnanceDejaArchiveeException;
 import com.medapp.backend.exception.OrdonnanceIntrouvableException;
 import com.medapp.backend.exception.PatientIntrouvableException;
+import com.medapp.backend.model.Medicament;
 import com.medapp.backend.model.Ordonnance;
 import com.medapp.backend.model.StatutOrdonnance;
 import com.medapp.backend.repository.OrdonnanceRepository;
 import com.medapp.backend.repository.PatientRepository;
+
+import com.lowagie.text.Document;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfWriter;
+import java.io.ByteArrayOutputStream;
 
 @Service
 public class OrdonnanceService {
@@ -91,6 +99,42 @@ public class OrdonnanceService {
         ordonnance.setStatut(StatutOrdonnanceCalculator.calculer(ordonnanceModifiee.getDateValidite(), ordonnanceModifiee.getStatut()));
 
         return ordonnanceRepository.save(ordonnance);
+
+    }
+
+    public byte[] generatePdf(String id) {
+        Ordonnance ordonnance = ordonnanceRepository.findById(id)
+            .orElseThrow(() -> new OrdonnanceIntrouvableException(id));
+
+        try{
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            Document document = new Document();
+            PdfWriter.getInstance(document, outputStream);
+
+            document.open();
+            document.add(new Paragraph("Ordonnance medicale"));
+            document.add(new Paragraph("Date d'emission : " + ordonnance.getDateEmission()));
+            document.add(new Paragraph("Date de validite : " + ordonnance.getDateValidite()));
+            document.add(new Paragraph(" "));
+
+            for (Medicament medicament : ordonnance.getMedicaments()) {
+                document.add(new Paragraph(
+                    medicament.getNom() + " - " + medicament.getDosage()
+                    + " - " + medicament.getFrequence() + " - " + medicament.getDuree()
+                ));
+            }
+
+            if (ordonnance.getRemarques() != null && !ordonnance.getRemarques().isBlank()) {
+                document.add(new Paragraph(" "));
+                document.add(new Paragraph("Remarques : " + ordonnance.getRemarques()));
+            }
+
+            document.close();
+            return outputStream.toByteArray();
+
+        }catch(Exception e){
+            throw new RuntimeException("Erreur lors de la generation du PDF." , e);
+        }
 
     }
 

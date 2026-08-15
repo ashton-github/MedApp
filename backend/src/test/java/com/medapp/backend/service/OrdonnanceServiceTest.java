@@ -3,6 +3,7 @@ package com.medapp.backend.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -324,6 +325,36 @@ public class OrdonnanceServiceTest {
         assertThrows(OrdonnanceDejaArchiveeException.class,
             () -> ordonnanceService.modifierOrdonnance(id, ordonnance, "medecin-1")
         );
+    }
+
+
+    @Test
+    void generatePdf_retourneDesBytesNonVides_siOrdonnanceExiste(){
+        String id = "ordonnance-1";
+        Ordonnance ordonnance = new Ordonnance(
+            "patient-123", "medecin-1", LocalDate.now(), LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            StatutOrdonnance.ACTIVE, "RAS"
+        );
+        ordonnance.setId(id);
+
+        when(ordonnanceRepository.findById(id)).thenReturn(Optional.of(ordonnance));
+
+        byte[] result = ordonnanceService.generatePdf(id);
+
+        assertNotNull(result);
+        assertTrue(result.length > 0);
+        //a real PDF file always starts with this exact byte signature
+        assertEquals("%PDF", new String(result , 0 , 4));
+    }
+
+    @Test
+    void generatePdf_lanceException_siIdInexistant(){
+        String idInexistant = "id-inexistant";
+        when(ordonnanceRepository.findById(idInexistant)).thenReturn(Optional.empty());
+
+        assertThrows(OrdonnanceIntrouvableException.class,
+            () -> ordonnanceService.generatePdf(idInexistant));
     }
 
     
