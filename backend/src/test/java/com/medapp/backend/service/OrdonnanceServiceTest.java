@@ -238,6 +238,24 @@ public class OrdonnanceServiceTest {
     }
 
     @Test
+    void archiverOrdonnance_lanceException_siDejaArchivee() {
+        String id = "ordonnance-1";
+        Ordonnance ordonnance = new Ordonnance(
+            "patient-123", "medecin-1", LocalDate.now(), LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            StatutOrdonnance.ARCHIVEE, null
+        );
+        ordonnance.setId(id);
+
+        when(ordonnanceRepository.findById(id)).thenReturn(Optional.of(ordonnance));
+
+        assertThrows(OrdonnanceDejaArchiveeException.class,
+            () -> ordonnanceService.archiverOrdonnance(id, "medecin-1"));
+
+        verify(ordonnanceRepository, never()).save(any(Ordonnance.class));
+    }
+
+    @Test
     void modifierOrdonnance_reussit_siMedecinEstLePrescripteur(){
         String id = "ordonnance-1";
 
@@ -356,6 +374,8 @@ public class OrdonnanceServiceTest {
         assertThrows(OrdonnanceIntrouvableException.class,
             () -> ordonnanceService.generatePdf(idInexistant));
     }
+
+
 
     
 }

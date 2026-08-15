@@ -53,6 +53,10 @@ public class OrdonnanceService {
             throw new AccesRefuseException("Seul le medecin prescripteur peut archiver cette ordonnance.");
         }
 
+        if(ordonnance.getStatut() == StatutOrdonnance.ARCHIVEE){
+            throw new OrdonnanceDejaArchiveeException("Cette ordonnance est deja archivee.");
+        }
+
         ordonnance.setStatut(StatutOrdonnance.ARCHIVEE);
         return ordonnanceRepository.save(ordonnance);
 
