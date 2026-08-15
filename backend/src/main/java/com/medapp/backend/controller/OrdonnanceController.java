@@ -28,6 +28,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PutMapping;
 
 
+import org.springframework.http.MediaType;
+
 
 
 
@@ -96,6 +98,16 @@ public class OrdonnanceController {
                 Ordonnance ordonnance = ordonnanceService.modifierOrdonnance(id, ordonnanceModifiee, utilisateur.id());
 
                 return ResponseEntity.ok(ordonnanceMapper.versResponse(ordonnance));
+    }
+
+
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<byte[]> exporterOrdonnancePdf(@PathVariable String id) {
+        byte[] pdf = ordonnanceService.generatePdf(id);
+
+        return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_PDF)
+            .body(pdf);
     }
     
     

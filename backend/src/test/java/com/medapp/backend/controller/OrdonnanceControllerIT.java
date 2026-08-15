@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.testcontainers.containers.MongoDBContainer;
@@ -33,6 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -351,6 +353,34 @@ public class OrdonnanceControllerIT {
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(modificationRequest)))
                 .andExpect(status().isForbidden());
+    }
+
+
+    @Test
+    void exporterOrdonnancePdf_retourne200_avecContentTypePdf()throws Exception{
+        String tokenMedecin = obtenirAccessToken("medecin-ordo-pdf@medapp.com", Role.MEDECIN);
+        String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876795");
+
+        OrdonnanceRequest request = new OrdonnanceRequest(
+            patientId, LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            null
+        );
+
+        MvcResult creationResult = mockMvc.perform(post("/api/ordonnances")
+                        .header("Authorization", "Bearer " + tokenMedecin)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String ordonnanceId = objectMapper.readTree(creationResult.getResponse().getContentAsString()).get("id").asText();
+
+        mockMvc.perform(get("/api/ordonnances/" + ordonnanceId + "/pdf")
+                        .header("Authorization","Bearer " + tokenMedecin))
+                    .andExpect(status().isOk())   
+                    .andExpect(content().contentType(MediaType.APPLICATION_PDF));
+
     }
     
 }
