@@ -6,7 +6,7 @@ import {
   Plus,
   Eye,
   Download,
-  Printer,
+  Archive,
   Pill
 } from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
@@ -21,6 +21,19 @@ const patientStore = usePatientStore()
 
 const filter = ref('ALL')
 const q = ref('')
+const archiveId = ref(null)  // ID of ordonnance pending archive confirmation
+const archiving = ref(false)
+
+const confirmArchive = async () => {
+  if (!archiveId.value) return
+  archiving.value = true
+  try {
+    await ordonnanceStore.archiveOrdonnance(archiveId.value)
+  } finally {
+    archiving.value = false
+    archiveId.value = null
+  }
+}
 onMounted(async () => {
   ordonnanceStore.ordonnances = []
   if (patientStore.patients.length === 0) {
@@ -147,8 +160,14 @@ const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.l
                 </div>
               </div>
               <div class="flex gap-1 shrink-0">
-                <button @click="ordonnanceStore.currentOrdonnance = rx; showScreen(screens.pdfPreview)" class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"><Eye class="w-4 h-4" /></button>
-                <button @click="ordonnanceStore.downloadPdf(rx.id)" class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"><Download class="w-4 h-4" /></button>
+                <button @click="ordonnanceStore.currentOrdonnance = rx; showScreen(screens.pdfPreview)" class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="Aperçu"><Eye class="w-4 h-4" /></button>
+                <button @click="ordonnanceStore.downloadPdf(rx.id)" class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="Télécharger PDF"><Download class="w-4 h-4" /></button>
+                <button
+                  v-if="rx.status !== 'ARCHIVED' && authUser?.role === 'medecin'"
+                  @click="archiveId = rx.id"
+                  class="p-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 text-muted-foreground hover:text-amber-600 transition-colors"
+                  title="Archiver"
+                ><Archive class="w-4 h-4" /></button>
               </div>
             </div>
           </div>
@@ -156,4 +175,24 @@ const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.l
       </div>
     </template>
   </div>
+
+  <!-- Archive confirmation modal -->
+  <Teleport to="body">
+    <div v-if="archiveId" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div v-motion :initial="{ scale: 0.9, opacity: 0 }" :enter="{ scale: 1, opacity: 1 }" class="bg-card rounded-2xl border border-border shadow-xl p-6 max-w-sm w-full">
+        <div class="w-12 h-12 bg-amber-100 dark:bg-amber-900/40 rounded-xl flex items-center justify-center mb-4">
+          <Archive class="w-6 h-6 text-amber-600" />
+        </div>
+        <h3 class="text-base font-bold text-foreground mb-1">Archiver cette ordonnance ?</h3>
+        <p class="text-sm text-muted-foreground mb-5">Cette action est irréversible. L'ordonnance sera marquée comme archivée et ne pourra plus être modifiée.</p>
+        <div class="flex gap-3">
+          <button @click="archiveId = null" class="flex-1 border border-border text-foreground hover:bg-accent rounded-xl py-2 text-sm font-medium transition-colors">Annuler</button>
+          <button @click="confirmArchive" :disabled="archiving" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white rounded-xl py-2 text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            <span v-if="archiving" class="animate-spin inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full"></span>
+            {{ archiving ? 'Archivage...' : 'Confirmer' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
