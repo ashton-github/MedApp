@@ -79,8 +79,22 @@ public class OrdonnanceService {
 
     public Ordonnance obtenirOrdonnance(String id ) {
     
-        return ordonnanceRepository.findById(id)
+        Ordonnance ordonnance = ordonnanceRepository.findById(id)
             .orElseThrow(() -> new OrdonnanceIntrouvableException(id));
+
+
+        return synchroniserStatut(ordonnance);
+    }
+
+    private Ordonnance synchroniserStatut(Ordonnance ordonnance){
+        StatutOrdonnance statutRecalcule = StatutOrdonnanceCalculator.calculer(
+            ordonnance.getDateValidite(),ordonnance.getStatut());
+
+        if(statutRecalcule != ordonnance.getStatut()){
+            ordonnance.setStatut(statutRecalcule);
+            return ordonnanceRepository.save(ordonnance);
+        }
+        return ordonnance;
     }
 
     public Ordonnance modifierOrdonnance(String ordonnanceId, Ordonnance ordonnanceModifiee, String medecinId) {

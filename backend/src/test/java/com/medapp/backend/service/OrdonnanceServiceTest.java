@@ -385,6 +385,46 @@ public class OrdonnanceServiceTest {
     }
 
 
+    @Test
+    void obtenirOrdonnance_recalculeEtSauvegardeStatut_siDateValiditeDepassee() {
+        String id = "ordonnance-1";
+        Ordonnance ordonnance = new Ordonnance(
+            "patient-123", "medecin-1", LocalDate.now().minusMonths(2), LocalDate.now().minusDays(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            StatutOrdonnance.ACTIVE, null  // stale: still ACTIVE despite dateValidite in the past
+        );
+        ordonnance.setId(id);
+
+        when(ordonnanceRepository.findById(id)).thenReturn(Optional.of(ordonnance));
+        when(ordonnanceRepository.save(any(Ordonnance.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Ordonnance resultat = ordonnanceService.obtenirOrdonnance(id);
+
+        assertEquals(StatutOrdonnance.EXPIREE, resultat.getStatut());
+        verify(ordonnanceRepository).save(any(Ordonnance.class));
+    }
+
+
+    @Test
+    void obtenirOrdonnance_neResauvegardePas_siStatutDejaCorrect() {
+        String id = "ordonnance-2";
+        Ordonnance ordonnance = new Ordonnance(
+            "patient-123", "medecin-1", LocalDate.now(), LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            StatutOrdonnance.ACTIVE, null  // genuinely still active, nothing to correct
+        );
+        ordonnance.setId(id);
+
+        when(ordonnanceRepository.findById(id)).thenReturn(Optional.of(ordonnance));
+
+        Ordonnance resultat = ordonnanceService.obtenirOrdonnance(id);
+
+        assertEquals(StatutOrdonnance.ACTIVE, resultat.getStatut());
+        verify(ordonnanceRepository, never()).save(any(Ordonnance.class));
+    }
+
+
+
 
     
 }
