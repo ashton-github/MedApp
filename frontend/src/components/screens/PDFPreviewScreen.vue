@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import {
   ChevronRight,
   Download,
@@ -8,32 +9,53 @@ import {
   QrCode
 } from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
+import { useOrdonnanceStore } from '../../stores/ordonnanceStore.js'
+import { usePatientStore } from '../../stores/patientStore.js'
 import { screens } from '../../constants/medapp.js'
 
-const { showScreen } = useMedAppState()
+const { showScreen, authUser } = useMedAppState()
+const ordonnanceStore = useOrdonnanceStore()
+const patientStore = usePatientStore()
 
-const rx = {
-  id: "rx1",
-  patientId: "p1",
-  date: "2026-07-08",
-  doctorName: "Dr. Martin",
-  status: "ACTIVE",
-  medications: [
-    { name: "Amoxicilline 1g", dosage: "1 matin, 1 soir", duration: "7 jours" }
-  ],
-  notes: ""
-}
+const fallbackDoctorName = computed(() => {
+  if (authUser.value?.email) {
+    const namePart = authUser.value.email.split('@')[0]
+    return `Dr. ${namePart.charAt(0).toUpperCase() + namePart.slice(1)}`
+  }
+  return 'Dr. Inconnu'
+})
 
-const p = {
-  id: "p1",
-  firstName: "Sophie",
-  lastName: "Laurent",
-  dob: "1985-03-15",
-  insurance: "CPAM Paris",
-  phone: "+33 6 12 34 56 78"
-}
+const rx = computed(() => {
+  const o = ordonnanceStore.currentOrdonnance
+  if (!o) {
+    return {
+      id: "---",
+      patientId: "",
+      issueDate: new Date().toISOString(),
+      validityDate: new Date().toISOString(),
+      doctorName: fallbackDoctorName.value,
+      status: "ACTIVE",
+      medications: [],
+      notes: ""
+    }
+  }
+  return {
+    ...o,
+    doctorName: o.doctorName || fallbackDoctorName.value
+  }
+})
 
-const fmt = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })
+const p = computed(() => {
+  const patient = patientStore.patients.find(p => p.id === rx.value.patientId)
+  return patient || {
+    firstName: "Patient",
+    lastName: "Inconnu",
+    birthDate: "",
+    phone: ""
+  }
+})
+
+const fmt = (d) => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : ''
 </script>
 
 <template>
@@ -45,7 +67,7 @@ const fmt = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", mon
         <span class="text-foreground">Aperçu PDF</span>
       </div>
       <div class="flex gap-2">
-        <button class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
+        <button @click="ordonnanceStore.downloadPdf(rx.id)" class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
           <Download class="w-4 h-4" /> Exporter PDF
         </button>
         <button onclick="window.print()" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
@@ -67,9 +89,9 @@ const fmt = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", mon
                 <p class="text-blue-200 text-sm">Ordonnance médicale officielle</p>
               </div>
               <div class="text-right text-sm">
-                <p class="font-semibold">Dr. Jean Martin</p>
-                <p class="text-blue-200">Médecin généraliste</p>
-                <p class="text-blue-300 text-xs font-mono">RPPS : 10004589231</p>
+                <p class="font-semibold">{{ rx.doctorName }}</p>
+                <p class="text-blue-200">Médecin</p>
+                <!-- Optional: add RPPS or other info if available in the future -->
               </div>
             </div>
           </div>
@@ -81,8 +103,8 @@ const fmt = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", mon
                 <p class="font-mono font-bold text-foreground text-base">{{ rx.id.toUpperCase() }}</p>
               </div>
               <div class="text-right">
-                <p class="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-1">Date</p>
-                <p class="font-bold text-foreground">{{ fmt(rx.date) }}</p>
+                <p class="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-1">Date d'émission</p>
+                <p class="font-bold text-foreground">{{ fmt(rx.issueDate) }}</p>
               </div>
             </div>
 
@@ -90,9 +112,8 @@ const fmt = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", mon
               <p class="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Informations patient</p>
               <div class="grid grid-cols-2 gap-3 text-sm">
                 <div><p class="text-muted-foreground text-xs">Nom complet</p><p class="font-semibold text-foreground mt-0.5">{{ p.firstName }} {{ p.lastName }}</p></div>
-                <div><p class="text-muted-foreground text-xs">Date de naissance</p><p class="font-semibold text-foreground mt-0.5">{{ fmt(p.dob) }}</p></div>
-                <div><p class="text-muted-foreground text-xs">Assurance</p><p class="font-semibold text-foreground mt-0.5">{{ p.insurance }}</p></div>
-                <div><p class="text-muted-foreground text-xs">Téléphone</p><p class="font-semibold text-foreground mt-0.5">{{ p.phone }}</p></div>
+                <div><p class="text-muted-foreground text-xs">Date de naissance</p><p class="font-semibold text-foreground mt-0.5">{{ fmt(p.birthDate) }}</p></div>
+                <div><p class="text-muted-foreground text-xs">Téléphone</p><p class="font-semibold text-foreground mt-0.5">{{ p.phone || 'Non renseigné' }}</p></div>
               </div>
             </div>
 
@@ -105,7 +126,7 @@ const fmt = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", mon
                   </div>
                   <div>
                     <p class="font-semibold text-foreground">{{ m.name }}</p>
-                    <p class="text-xs text-muted-foreground mt-0.5">Posologie : {{ m.dosage }} · Durée : {{ m.duration }}</p>
+                    <p class="text-xs text-muted-foreground mt-0.5">{{ m.dosage }}{{ m.dosage && m.frequency ? ' · ' : '' }}{{ m.frequency }}{{ (m.dosage || m.frequency) && m.duration ? ' · ' : '' }}{{ m.duration }}</p>
                   </div>
                 </div>
               </div>
@@ -121,7 +142,7 @@ const fmt = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", mon
                 <div class="w-36 h-16 border-2 border-dashed border-border rounded-xl flex items-center justify-center mb-2">
                   <p class="text-xs text-muted-foreground">Signature du médecin</p>
                 </div>
-                <p class="text-xs text-muted-foreground font-medium">Dr. Jean Martin</p>
+                <p class="text-xs text-muted-foreground font-medium">{{ rx.doctorName }}</p>
               </div>
               <div class="flex flex-col items-center gap-1.5">
                 <div class="w-16 h-16 bg-muted rounded-xl flex items-center justify-center border border-border">

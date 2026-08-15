@@ -18,15 +18,9 @@ const mapStatusToFrontend = (status) => {
   return 'ACTIVE'
 }
 
-/**
- * Map a frontend ordonnance object to the backend shape.
- */
 const toRequest = (o) => ({
   patientId: o.patientId,
-  medecinId: o.doctorId,
-  dateEmission: o.issueDate,
   dateValidite: o.validityDate,
-  statut: mapStatusToBackend(o.status),
   remarques: o.notes ?? '',
   medicaments: (o.medications || []).map(m => ({
     nom: m.name,

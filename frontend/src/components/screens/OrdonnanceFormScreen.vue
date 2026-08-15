@@ -31,7 +31,9 @@ const notes = ref('')
 const submitting = ref(false)
 const done = ref(false)
 
-const validityMonths = ref(1)
+const d = new Date()
+d.setMonth(d.getMonth() + 1)
+const validityDate = ref(d.toISOString().split('T')[0])
 
 // Fetch patients if empty
 if (patientStore.patients.length === 0) {
@@ -49,17 +51,10 @@ const rmMed = (i) => meds.value.splice(i, 1)
 const submit = async () => {
   submitting.value = true
   
-  const issueDate = new Date().toISOString().split('T')[0]
-  const d = new Date()
-  d.setMonth(d.getMonth() + Number(validityMonths.value))
-  const validityDate = d.toISOString().split('T')[0]
-
   try {
     await ordonnanceStore.createOrdonnance({
       patientId: sel.value.id,
-      doctorId: null, // Will be set by backend or auth context
-      issueDate,
-      validityDate,
+      validityDate: validityDate.value,
       status: 'ACTIVE',
       notes: notes.value,
       medications: meds.value
@@ -158,12 +153,11 @@ const initials = (f, l) => `${f[0]}${l[0]}`.toUpperCase()
               </div>
             </div>
             <div class="space-y-1.5">
-              <label class="text-xs font-medium text-foreground">Validité (mois)</label>
-              <select v-model="validityMonths" class="w-full h-9 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground">
-                <option value="1">1 mois</option>
-                <option value="3">3 mois</option>
-                <option value="6">6 mois</option>
-              </select>
+              <label class="text-xs font-medium text-foreground">Validité (jusqu'au)</label>
+              <div class="relative">
+                <Calendar class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input type="date" v-model="validityDate" class="w-full h-9 pl-9 pr-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground" />
+              </div>
             </div>
           </div>
         </div>

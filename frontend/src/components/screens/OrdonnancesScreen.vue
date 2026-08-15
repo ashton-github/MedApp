@@ -21,10 +21,14 @@ const patientStore = usePatientStore()
 
 const filter = ref('ALL')
 const q = ref('')
-onMounted(() => {
-  ordonnanceStore.fetchOrdonnances()
+onMounted(async () => {
+  ordonnanceStore.ordonnances = []
   if (patientStore.patients.length === 0) {
-    patientStore.fetchPatients()
+    await patientStore.fetchPatients()
+  }
+  for (const p of patientStore.patients) {
+    const rx = await ordonnanceStore.fetchOrdonnancesByPatientId(p.id)
+    ordonnanceStore.ordonnances.push(...rx)
   }
 })
 
@@ -34,10 +38,14 @@ const getPatientName = (id) => {
 }
 
 const list = computed(() => {
+  const defaultDocName = authUser.value?.email 
+    ? `Dr. ${authUser.value.email.split('@')[0].charAt(0).toUpperCase() + authUser.value.email.split('@')[0].slice(1)}` 
+    : 'Dr. inconnu'
+
   return ordonnanceStore.ordonnances.map(r => ({
     ...r,
     patientName: r.patientName || getPatientName(r.patientId),
-    doctorName: r.doctorName || 'Dr. inconnu'
+    doctorName: r.doctorName || defaultDocName
   })).filter(r => {
     const mf = filter.value === 'ALL' || r.status === filter.value
     const ms = r.patientName.toLowerCase().includes(q.value.toLowerCase()) || r.medications.some(m => m.name.toLowerCase().includes(q.value.toLowerCase()))
@@ -139,9 +147,8 @@ const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.l
                 </div>
               </div>
               <div class="flex gap-1 shrink-0">
-                <button @click="showScreen(screens.pdfPreview)" class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"><Eye class="w-4 h-4" /></button>
-                <button class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"><Download class="w-4 h-4" /></button>
-                <button class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"><Printer class="w-4 h-4" /></button>
+                <button @click="ordonnanceStore.currentOrdonnance = rx; showScreen(screens.pdfPreview)" class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"><Eye class="w-4 h-4" /></button>
+                <button @click="ordonnanceStore.downloadPdf(rx.id)" class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"><Download class="w-4 h-4" /></button>
               </div>
             </div>
           </div>
