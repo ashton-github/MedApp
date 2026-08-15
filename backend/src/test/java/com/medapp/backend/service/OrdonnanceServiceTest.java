@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -31,6 +32,9 @@ import com.medapp.backend.model.Sexe;
 import com.medapp.backend.model.StatutOrdonnance;
 import com.medapp.backend.repository.OrdonnanceRepository;
 import com.medapp.backend.repository.PatientRepository;
+
+import static org.mockito.Mockito.mock; 
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 public class OrdonnanceServiceTest {
@@ -421,6 +425,46 @@ public class OrdonnanceServiceTest {
 
         assertEquals(StatutOrdonnance.ACTIVE, resultat.getStatut());
         verify(ordonnanceRepository, never()).save(any(Ordonnance.class));
+    }
+
+    @Test
+    void obtenirHistorique_recalculeStatutDesOrdonnancesPerimees(){
+        String patientId = "patient-123";
+
+        Ordonnance perimee = new Ordonnance(
+            patientId, "medecin-1", LocalDate.now().minusMonths(2), LocalDate.now().minusDays(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            StatutOrdonnance.ACTIVE, null  // stale: should be EXPIREE
+        );
+        perimee.setId("ordo-perimee");
+
+        Ordonnance active = new Ordonnance(
+            patientId, "medecin-1", LocalDate.now(), LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Amoxicilline", "500mg", "2x/jour", "7 jours")),
+            StatutOrdonnance.ACTIVE, null  // genuinely still active
+        );
+        active.setId("ordo-active");
+
+        when(patientRepository.findById(patientId)).thenReturn(Optional.of(mock(Patient.class)));
+        when(ordonnanceRepository.findByPatientId(patientId)).thenReturn(List.of(perimee , active));
+        when(ordonnanceRepository.save(any(Ordonnance.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        List<Ordonnance> result = ordonnanceService.obtenirHistorique(patientId, null);
+
+        Ordonnance perimeeDansResultat = result.stream()
+            .filter(o -> o.getId().equals("ordo-perimee"))
+            .findFirst().orElseThrow();
+
+        Ordonnance activeDansResultat = result.stream()
+            .filter(o -> o.getId().equals("ordo-active"))
+            .findFirst().orElseThrow();
+
+
+        assertEquals(StatutOrdonnance.EXPIREE,perimeeDansResultat.getStatut());
+        assertEquals(StatutOrdonnance.ACTIVE, activeDansResultat.getStatut());
+
+        verify(ordonnanceRepository , times(1)).save(any(Ordonnance.class));//only the stale one gets saved 
+
     }
 
 

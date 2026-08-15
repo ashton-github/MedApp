@@ -72,6 +72,7 @@ public class OrdonnanceService {
         : ordonnanceRepository.findByPatientId(patientId);
 
         return ordonnances.stream()
+            .map(this::synchroniserStatut)
             .sorted(Comparator.comparing(Ordonnance::getDateEmission).reversed()
                 .thenComparing(Ordonnance::getId))
             .toList();
