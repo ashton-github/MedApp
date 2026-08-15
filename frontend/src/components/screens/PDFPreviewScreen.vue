@@ -116,7 +116,8 @@ const printOrdonnance = () => {
         <div class="body">
           <div class="row-between">
             <div><div class="label">N° Ordonnance</div><div class="value">${rx.value.id.toUpperCase()}</div></div>
-            <div style="text-align:right"><div class="label">Date d'émission</div><div class="value">${fmt(rx.value.issueDate)}</div></div>
+            <div style="text-align:center"><div class="label">Date d'émission</div><div class="value">${fmt(rx.value.issueDate)}</div></div>
+            <div style="text-align:right"><div class="label">Valide jusqu'au</div><div class="value" style="color:#16a34a">${fmt(rx.value.validityDate)}</div></div>
           </div>
           <div class="patient-box">
             <div class="section-title">Informations patient</div>
@@ -207,9 +208,13 @@ const printOrdonnance = () => {
                 <p class="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-1">N° Ordonnance</p>
                 <p class="font-mono font-bold text-foreground text-base">{{ rx.id.toUpperCase() }}</p>
               </div>
-              <div class="text-right">
+              <div class="text-center">
                 <p class="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-1">Date d'émission</p>
                 <p class="font-bold text-foreground">{{ fmt(rx.issueDate) }}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-1">Valide jusqu'au</p>
+                <p class="font-bold text-emerald-600">{{ fmt(rx.validityDate) }}</p>
               </div>
             </div>
 
