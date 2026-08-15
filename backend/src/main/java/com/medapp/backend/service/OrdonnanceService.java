@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.medapp.backend.exception.AccesRefuseException;
+import com.medapp.backend.exception.OrdonnanceDejaArchiveeException;
 import com.medapp.backend.exception.OrdonnanceIntrouvableException;
 import com.medapp.backend.exception.PatientIntrouvableException;
 import com.medapp.backend.model.Ordonnance;
@@ -74,6 +75,12 @@ public class OrdonnanceService {
         if(!ordonnance.getMedecinId().equals(medecinId)){
             throw new AccesRefuseException(
                 "Seul le medecin prescripteur peut modifier cette ordonnance"
+            );
+        }
+
+        if(ordonnance.getStatut() == StatutOrdonnance.ARCHIVEE){
+            throw new OrdonnanceDejaArchiveeException(
+                "une ordonnance archivee ne peut pas etre modifier"
             );
         }
 

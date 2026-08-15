@@ -20,6 +20,7 @@ import org.mockito.internal.matchers.Or;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.medapp.backend.exception.AccesRefuseException;
+import com.medapp.backend.exception.OrdonnanceDejaArchiveeException;
 import com.medapp.backend.exception.OrdonnanceIntrouvableException;
 import com.medapp.backend.exception.PatientIntrouvableException;
 import com.medapp.backend.model.Medicament;
@@ -304,6 +305,25 @@ public class OrdonnanceServiceTest {
             () -> ordonnanceService.modifierOrdonnance(idInexistant, ordonnanceModifiee, "medecin-1"));
 
         verify(ordonnanceRepository, never()).save(any(Ordonnance.class));
+    }
+
+    @Test
+    void modifierOrdonnance_lanceException_siOrdonnanceEstArchive(){
+        String id = "ordonnance-1";
+
+        Ordonnance ordonnance = new Ordonnance(
+            "patient-123", "medecin-1", LocalDate.now(), LocalDate.now().plusMonths(1),
+            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
+            StatutOrdonnance.ARCHIVEE, null
+        );
+        ordonnance.setId(id);
+
+
+        when(ordonnanceRepository.findById(id)).thenReturn(Optional.of(ordonnance));
+
+        assertThrows(OrdonnanceDejaArchiveeException.class,
+            () -> ordonnanceService.modifierOrdonnance(id, ordonnance, "medecin-1")
+        );
     }
 
     

@@ -74,6 +74,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message" , ex.getMessage()));
     }
 
+    @ExceptionHandler(OrdonnanceDejaArchiveeException.class)
+    public ResponseEntity<Map<String , String >> handleOrdonnanceDejaArchivee(OrdonnanceDejaArchiveeException ex){
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message" , ex.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleExceptionInattendue(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
