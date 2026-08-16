@@ -46,7 +46,8 @@ export function useMedAppState() {
 
   const openNewOrdonnance = (patientId = null) => {
     ordonnanceToEdit.value = null
-    selectedPatientId.value = patientId ?? null
+    // Ensure patientId is not a DOM Event from a click handler
+    selectedPatientId.value = (typeof patientId === 'string' || typeof patientId === 'number') ? patientId : null
     showScreen(screens.ordonnanceForm)
   }
 

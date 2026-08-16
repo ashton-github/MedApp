@@ -4,15 +4,19 @@ import { createPinia, setActivePinia } from 'pinia'
 import PDFPreviewScreen from '../src/components/screens/PDFPreviewScreen.vue'
 import { screens } from '../src/constants/medapp.js'
 
+import { ref } from 'vue'
+
 const { mockShowScreen, mockAuthUser } = vi.hoisted(() => ({
   mockShowScreen: vi.fn(),
-  mockAuthUser: { value: { email: 'medecin@medapp.com', role: 'medecin' } }
+  mockAuthUser: { email: 'medecin@medapp.com', role: 'medecin' }
 }))
+
+const authUserRef = ref(mockAuthUser)
 
 vi.mock('../src/composables/useMedAppState.js', () => ({
   useMedAppState: () => ({
     showScreen: mockShowScreen,
-    authUser: mockAuthUser
+    authUser: authUserRef
   })
 }))
 
@@ -77,7 +81,7 @@ describe('PDFPreviewScreen.vue', () => {
     mockOrdonnanceStore.currentOrdonnance = null
     mockOrdonnanceStore.downloadPdf.mockClear()
     mockPatientStore.patients = []
-    mockAuthUser.value = { email: 'medecin@medapp.com', role: 'medecin' }
+    authUserRef.value = { email: 'medecin@medapp.com', role: 'medecin' }
   })
 
   afterEach(() => {
@@ -144,6 +148,13 @@ describe('PDFPreviewScreen.vue', () => {
       close,
       focus
     })))
+
+    // Mock querySelector so printOrdonnance doesn't abort
+    const originalQuerySelector = document.querySelector.bind(document)
+    document.querySelector = vi.fn((sel) => {
+      if (sel === '[data-print-target]') return document.createElement('div')
+      return originalQuerySelector(sel)
+    })
 
     const wrapper = createWrapper()
     const printBtn = wrapper.findAll('button').find((b) => b.text().includes('Imprimer'))

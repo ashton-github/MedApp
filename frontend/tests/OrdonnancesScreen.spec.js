@@ -4,21 +4,26 @@ import { createPinia, setActivePinia } from 'pinia'
 import OrdonnancesScreen from '../src/components/screens/OrdonnancesScreen.vue'
 import { screens } from '../src/constants/medapp.js'
 
+import { ref, reactive } from 'vue'
+
 const {
   mockAuthUser,
   mockOpenNewOrdonnance,
   mockOpenEditOrdonnance,
   mockShowScreen
 } = vi.hoisted(() => ({
-  mockAuthUser: { value: { role: 'medecin', email: 'medecin@medapp.com' } },
+  mockAuthUser: { role: 'medecin', email: 'medecin@medapp.com' }, // plain object to be wrapped in ref
   mockOpenNewOrdonnance: vi.fn(),
   mockOpenEditOrdonnance: vi.fn(),
   mockShowScreen: vi.fn()
 }))
 
+// We create an actual ref to ensure Vue unwraps it correctly in the template
+const authUserRef = ref(mockAuthUser)
+
 vi.mock('../src/composables/useMedAppState.js', () => ({
   useMedAppState: () => ({
-    authUser: mockAuthUser,
+    authUser: authUserRef,
     openNewOrdonnance: mockOpenNewOrdonnance,
     openEditOrdonnance: mockOpenEditOrdonnance,
     showScreen: mockShowScreen
@@ -38,22 +43,22 @@ const sampleOrdonnance = {
   doctorName: ''
 }
 
-const mockPatientStore = {
+const mockPatientStore = reactive({
   patients: [samplePatient],
   fetchPatients: vi.fn().mockResolvedValue()
-}
+})
 vi.mock('../src/stores/patientStore.js', () => ({
   usePatientStore: () => mockPatientStore
 }))
 
-const mockOrdonnanceStore = {
+const mockOrdonnanceStore = reactive({
   ordonnances: [],
   loading: false,
   currentOrdonnance: null,
   fetchOrdonnancesByPatientId: vi.fn().mockResolvedValue([sampleOrdonnance]),
   archiveOrdonnance: vi.fn().mockResolvedValue(),
   downloadPdf: vi.fn().mockResolvedValue()
-}
+})
 vi.mock('../src/stores/ordonnanceStore.js', () => ({
   useOrdonnanceStore: () => mockOrdonnanceStore
 }))
@@ -74,7 +79,7 @@ const createWrapper = () =>
 describe('OrdonnancesScreen.vue', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    mockAuthUser.value = { role: 'medecin', email: 'medecin@medapp.com' }
+    authUserRef.value = { role: 'medecin', email: 'medecin@medapp.com' }
     mockOpenNewOrdonnance.mockClear()
     mockOpenEditOrdonnance.mockClear()
     mockShowScreen.mockClear()

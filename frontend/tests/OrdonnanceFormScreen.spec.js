@@ -4,6 +4,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import OrdonnanceFormScreen from '../src/components/screens/OrdonnanceFormScreen.vue'
 import { screens } from '../src/constants/medapp.js'
 
+import { ref } from 'vue'
+
 const {
   mockShowScreen,
   mockAuthUser,
@@ -11,15 +13,17 @@ const {
   mockOrdonnanceToEdit
 } = vi.hoisted(() => ({
   mockShowScreen: vi.fn(),
-  mockAuthUser: { value: { email: 'medecin@medapp.com', role: 'medecin' } },
+  mockAuthUser: { email: 'medecin@medapp.com', role: 'medecin' },
   mockSelectedPatientId: { value: null },
   mockOrdonnanceToEdit: { value: null }
 }))
 
+const authUserRef = ref(mockAuthUser)
+
 vi.mock('../src/composables/useMedAppState.js', () => ({
   useMedAppState: () => ({
     showScreen: mockShowScreen,
-    authUser: mockAuthUser,
+    authUser: authUserRef,
     selectedPatientId: mockSelectedPatientId,
     ordonnanceToEdit: mockOrdonnanceToEdit
   })
