@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.Test;
 
-
+import com.medapp.backend.TestDataFactory;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.model.User;
 
@@ -22,7 +22,7 @@ public class JwtServiceTest {
     @Test
     void generateToken_creeUnTokenValide(){
         //
-        User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
+        User user = TestDataFactory.unUtilisateur(Role.MEDECIN);
 
         //
         String token = jwtService.generateAccessToken(user);
@@ -34,7 +34,7 @@ public class JwtServiceTest {
 
     @Test 
     void extractUserId_retourneEdUtilisateur_pourTokenValide(){
-        User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
+        User user = TestDataFactory.unUtilisateur(Role.MEDECIN);
 
         user.setId("user-id-123");
         String token = jwtService.generateAccessToken(user);
@@ -49,7 +49,7 @@ public class JwtServiceTest {
     @Test
     void extractRole_retourneRoleUtilisateur_pourTokenValide(){
         //
-        User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
+        User user = TestDataFactory.unUtilisateur(Role.MEDECIN);
         user.setId("user-id-123");
 
         String token = jwtService.generateAccessToken(user);
@@ -84,7 +84,7 @@ public class JwtServiceTest {
     void isTokenValid_retourneFalse_pourTokenSigneAvecMauvaiseCle(){
         //
         JwtService jwtSericeAutreCle = new JwtService("une-cle-secrete-suffisament-longue-pour-les-tests-hs356",  1800000 , 604800000);
-        User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
+        User user = TestDataFactory.unUtilisateur(Role.MEDECIN);
         user.setId("user-id-123");
 
         String tokenSigneAvecAutreCle = jwtSericeAutreCle.generateAccessToken(user);
@@ -100,7 +100,7 @@ public class JwtServiceTest {
     @Test
     void generateRefreshToken_creeUnTokenAvecTypeRefresh(){
         //
-        User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
+        User user = TestDataFactory.unUtilisateur(Role.MEDECIN);
         user.setId("user-id-123");
 
         String refreshToken = jwtService.generateRefreshToken(user);
@@ -114,7 +114,7 @@ public class JwtServiceTest {
 
     @Test 
     void isTokenValid_retourneFalse_siRefreshTokenUtiliseCommeAccessToken(){
-        User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
+        User user = TestDataFactory.unUtilisateur(Role.MEDECIN);
         user.setId("user-id-123");
 
         String refreshToken = jwtService.generateRefreshToken(user);

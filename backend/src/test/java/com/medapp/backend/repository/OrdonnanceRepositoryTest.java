@@ -3,7 +3,6 @@ package com.medapp.backend.repository;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
@@ -15,9 +14,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import com.medapp.backend.model.Medicament;
+import com.medapp.backend.TestDataFactory;
 import com.medapp.backend.model.Ordonnance;
-import com.medapp.backend.model.StatutOrdonnance;
 
 import org.testcontainers.junit.jupiter.Container;
 
@@ -43,11 +41,8 @@ public class OrdonnanceRepositoryTest {
     void sauvegardeEtRetrouveParPatientId(){
         String patientId = "patient-123";
 
-        Ordonnance ordonnance = new Ordonnance(
-            patientId , "medecin-123" , LocalDate.now() , LocalDate.now().plusMonths(1),
-            List.of(new Medicament("Doliprane" , "100mg" , "3x/jour" , "5 jours")) ,
-            StatutOrdonnance.ACTIVE , null
-        );
+        Ordonnance ordonnance = TestDataFactory.uneOrdonnance(patientId, "medecin-123");
+
 
         ordonnanceRepository.save(ordonnance);
 

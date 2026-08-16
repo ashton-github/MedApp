@@ -1,5 +1,6 @@
 package com.medapp.backend.repository;
 
+import com.medapp.backend.TestDataFactory;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.model.User;
 import org.springframework.dao.DuplicateKeyException;
@@ -13,7 +14,6 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,18 +39,19 @@ public class UserRepositoryTest {
 
     @Test
     void sauvegarde_puis_retrouve_utilisateur_par_email(){
-         User user = new User("test@medapp.com" , "hashedpassword", "Dupond" , "Jean", Role.MEDECIN , true , LocalDateTime.now() , null);
+        User user = TestDataFactory.unUtilisateur(Role.MEDECIN);
          userRepository.save(user);
          
-         Optional<User> retrievedUser = userRepository.findByEmail("test@medapp.com");
+         Optional<User> retrievedUser = userRepository.findByEmail(user.getEmail());
          assertTrue(retrievedUser.isPresent());
-         assertEquals("Dupond", retrievedUser.get().getNom());
+         assertEquals("Dupont", retrievedUser.get().getNom());
     }
 
     @Test
     void sauvegarde_lanceExcetption_siEmailDejaExistant(){
-        User user1 =   new User("test@medapp.com" , "hashedpassword1", "Dupond" , "Jean", Role.MEDECIN , true , LocalDateTime.now() , null);
-        User user2 = new User("test@medapp.com" , "hashedpassword2", "martin" , "Jean", Role.MEDECIN , true , LocalDateTime.now() , null);
+        User user1 = TestDataFactory.unUtilisateur(Role.MEDECIN);
+        User user2 = TestDataFactory.unUtilisateur(Role.MEDECIN);
+        user2.setEmail(user1.getEmail());
 
         userRepository.save(user1);
 
