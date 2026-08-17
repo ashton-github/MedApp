@@ -11,15 +11,17 @@ import {
 import { useMedAppState } from '../../composables/useMedAppState.js'
 import { useOrdonnanceStore } from '../../stores/ordonnanceStore.js'
 import { usePatientStore } from '../../stores/patientStore.js'
+import { useAuthStore } from '../../stores/authStore.js'
 import { screens } from '../../constants/medapp.js'
 
-const { showScreen, authUser } = useMedAppState()
+const { showScreen } = useMedAppState()
+const authStore = useAuthStore()
 const ordonnanceStore = useOrdonnanceStore()
 const patientStore = usePatientStore()
 
 const fallbackDoctorName = computed(() => {
-  if (authUser.value?.email) {
-    const namePart = authUser.value.email.split('@')[0]
+  if (authStore.user?.email) {
+    const namePart = authStore.user.email.split('@')[0]
     return `Dr. ${namePart.charAt(0).toUpperCase() + namePart.slice(1)}`
   }
   return 'Dr. Inconnu'

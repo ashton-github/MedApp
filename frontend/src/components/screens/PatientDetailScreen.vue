@@ -26,9 +26,8 @@ const { showScreen, editPatient, selectedPatientId, openNewOrdonnance } = useMed
 const patientStore = usePatientStore()
 const ordonnanceStore = useOrdonnanceStore()
 const authStore = useAuthStore()
-
-const isDoc = authStore.role === 'medecin'
-const isAdmin = authStore.role === 'admin'
+const isDoc = computed(() => authStore.role === 'medecin')
+const isAdmin = computed(() => authStore.role === 'admin')
 const tab   = ref('overview')
 const patientOrdonnances = ref([])
 

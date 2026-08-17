@@ -11,12 +11,14 @@ import {
   Pill
 } from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
+import { useAuthStore } from '../../stores/authStore.js'
 import { useOrdonnanceStore } from '../../stores/ordonnanceStore.js'
 import { usePatientStore } from '../../stores/patientStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
 
-const { authUser, openNewOrdonnance, openEditOrdonnance, showScreen } = useMedAppState()
+const { openNewOrdonnance, openEditOrdonnance, showScreen } = useMedAppState()
+const authStore = useAuthStore()
 const ordonnanceStore = useOrdonnanceStore()
 const patientStore = usePatientStore()
 
@@ -52,8 +54,8 @@ const getPatientName = (id) => {
 }
 
 const list = computed(() => {
-  const defaultDocName = authUser.value?.email 
-    ? `Dr. ${authUser.value.email.split('@')[0].charAt(0).toUpperCase() + authUser.value.email.split('@')[0].slice(1)}` 
+  const defaultDocName = authStore.user?.email
+    ? `Dr. ${authStore.user.email.split('@')[0].charAt(0).toUpperCase() + authStore.user.email.split('@')[0].slice(1)}`
     : 'Dr. inconnu'
 
   return ordonnanceStore.ordonnances.map(r => ({
@@ -95,7 +97,7 @@ const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.l
         <h1 class="text-2xl font-bold text-foreground">Ordonnances</h1>
         <p class="text-muted-foreground text-sm mt-0.5">{{ ordonnanceStore.ordonnances.length }} ordonnances au total</p>
       </div>
-      <button v-if="authUser?.role === 'medecin'" @click="openNewOrdonnance" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
+      <button v-if="authStore?.role === 'medecin'" @click="openNewOrdonnance" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
         <Plus class="w-4 h-4" /> Nouvelle ordonnance
       </button>
     </div>
@@ -164,13 +166,13 @@ const avatarColor = (name) => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.l
                 <button @click="ordonnanceStore.currentOrdonnance = rx; showScreen(screens.pdfPreview)" class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="Aperçu"><Eye class="w-4 h-4" /></button>
                 <button @click="ordonnanceStore.downloadPdf(rx.id)" class="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors" title="Télécharger PDF"><Download class="w-4 h-4" /></button>
                 <button
-                  v-if="rx.status !== 'ARCHIVED' && authUser?.role === 'medecin'"
+                  v-if="rx.status !== 'ARCHIVED' && authStore?.role === 'medecin'"
                   @click="openEditOrdonnance(rx)"
                   class="p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-muted-foreground hover:text-blue-600 transition-colors"
                   title="Modifier"
                 ><Pencil class="w-4 h-4" /></button>
                 <button
-                  v-if="rx.status !== 'ARCHIVED' && authUser?.role === 'medecin'"
+                  v-if="rx.status !== 'ARCHIVED' && authStore?.role === 'medecin'"
                   @click="archiveId = rx.id"
                   class="p-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 text-muted-foreground hover:text-amber-600 transition-colors"
                   title="Archiver"

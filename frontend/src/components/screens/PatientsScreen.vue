@@ -22,7 +22,7 @@ import { cn } from '../../lib/utils.js'
 const { openNewPatient, editPatient, viewPatient } = useMedAppState()
 const patientStore = usePatientStore()
 const authStore = useAuthStore()
-const isAdmin = authStore.role === 'admin'
+const isAdmin = computed(() => authStore.role === 'admin')
 
 const view = ref('grid')
 const q    = ref('')

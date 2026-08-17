@@ -12,9 +12,10 @@ import {
   CheckCircle2
 } from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
+import { useAuthStore } from '../../stores/authStore.js'
 import { cn } from '../../lib/utils.js'
 
-const { authUser } = useMedAppState()
+const authStore = useAuthStore()
 
 const editing = ref(false)
 const saving = ref(false)
@@ -22,20 +23,21 @@ const saved = ref(false)
 const toggles = ref([true, true, false, true])
 
 const initials = computed(() => {
-  if (!authUser.value?.name) return 'DR'
-  return authUser.value.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+  const email = authStore.user?.email
+  if (!email) return 'DR'
+  return email.split('@')[0].slice(0, 2).toUpperCase()
 })
 
 const pf = ref({
-  firstName: authUser.value?.name?.split(' ').slice(1).join(' ') || authUser.value?.name || 'Martin',
-  lastName: authUser.value?.name?.split(' ')[0] || 'Dr.',
-  email: authUser.value?.email || 'dr.martin@medapp.fr',
+  firstName: authStore.user?.prenom || authStore.user?.email?.split('@')[0] || 'Martin',
+  lastName: authStore.user?.nom || 'Dr.',
+  email: authStore.user?.email || 'dr.martin@medapp.fr',
   phone: '+33 6 12 34 56 78',
-  specialty: authUser.value?.role === 'medecin' ? 'Médecine générale' : authUser.value?.role === 'secretaire' ? 'Secrétariat médical' : 'Administration',
-  rpps: authUser.value?.role === 'medecin' ? '10004589231' : '',
+  specialty: authStore.role === 'medecin' ? 'Médecine générale' : authStore.role === 'secretaire' ? 'Secrétariat médical' : 'Administration',
+  rpps: authStore.role === 'medecin' ? '10004589231' : '',
 })
 
-const isDoctor = computed(() => authUser.value?.role === 'medecin')
+const isDoctor = computed(() => authStore.role === 'medecin')
 
 const PREFS = [
   "Notifications email",
@@ -81,8 +83,8 @@ const saveProfile = (e) => {
               {{ initials }}
             </div>
             <div class="flex-1">
-              <p class="font-semibold text-foreground">{{ authUser?.name || 'Dr. Martin' }}</p>
-              <p class="text-sm text-muted-foreground">{{ authUser?.email || 'dr.martin@medapp.fr' }}</p>
+              <p class="font-semibold text-foreground">{{ authStore.user?.email?.split('@')[0] || 'Dr. Martin' }}</p>
+              <p class="text-sm text-muted-foreground">{{ authStore.user?.email || 'dr.martin@medapp.fr' }}</p>
               <p class="text-xs text-muted-foreground mt-0.5">{{ pf.specialty }}</p>
             </div>
             <span v-if="saved" class="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">

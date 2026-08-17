@@ -14,12 +14,14 @@ import {
   AlertCircle
 } from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
+import { useAuthStore } from '../../stores/authStore.js'
 import { useRendezVousStore } from '../../stores/rendezVousStore.js'
 import { usePatientStore } from '../../stores/patientStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
 
-const { showScreen, viewPatient, authUser } = useMedAppState()
+const { showScreen, viewPatient } = useMedAppState()
+const authStore = useAuthStore()
 const rendezVousStore = useRendezVousStore()
 const patientStore = usePatientStore()
 
@@ -206,7 +208,7 @@ const avatarColor = (name = '') => AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AV
             <ChevronRight class="w-4 h-4" />
           </button>
         </div>
-        <button v-if="authUser?.role === 'secretaire'" @click="openNewRv()" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
+        <button v-if="authStore.role === 'secretaire'" @click="openNewRv()" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
           <Plus class="w-4 h-4" /> Nouveau RDV
         </button>
       </div>
@@ -221,13 +223,13 @@ const avatarColor = (name = '') => AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AV
       <div class="grid grid-cols-5 gap-3">
         <div v-for="(d, i) in DAYS" :key="i" class="space-y-2">
           <!-- Day header -->
-          <div :class="cn('text-center pb-3 border-b-2 transition-colors relative group', isToday(d) ? 'border-blue-500' : 'border-border', authUser?.role === 'secretaire' ? 'cursor-pointer' : '')" @click="authUser?.role === 'secretaire' ? openNewRv(toISO(d)) : null">
+          <div :class="cn('text-center pb-3 border-b-2 transition-colors relative group', isToday(d) ? 'border-blue-500' : 'border-border', authStore.role === 'secretaire' ? 'cursor-pointer' : '')" @click="authStore.role === 'secretaire' ? openNewRv(toISO(d)) : null">
             <p class="text-xs text-muted-foreground font-medium uppercase tracking-wide">{{ DAY_NAMES[i] }}</p>
-            <div :class="cn('w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold mx-auto mt-1.5 transition-colors', isToday(d) ? 'bg-blue-600 text-white' : 'text-foreground', authUser?.role === 'secretaire' ? 'group-hover:bg-accent' : '')">
+            <div :class="cn('w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold mx-auto mt-1.5 transition-colors', isToday(d) ? 'bg-blue-600 text-white' : 'text-foreground', authStore.role === 'secretaire' ? 'group-hover:bg-accent' : '')">
               {{ d.getDate() }}
             </div>
             <p class="text-xs text-muted-foreground mt-1">{{ getAppts(d).length }} RDV</p>
-            <div v-if="authUser?.role === 'secretaire'" class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-background/50 backdrop-blur-[1px]">
+            <div v-if="authStore.role === 'secretaire'" class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-background/50 backdrop-blur-[1px]">
               <Plus class="w-5 h-5 text-blue-600" />
             </div>
           </div>
@@ -246,8 +248,8 @@ const avatarColor = (name = '') => AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AV
                 v-motion
                 :initial="{ opacity: 0, y: 6 }"
                 :enter="{ opacity: 1, y: 0, transition: { delay: ai * 60 } }"
-                @click="authUser?.role === 'secretaire' ? openEditRv(a) : null"
-                :class="cn('p-2.5 rounded-xl border transition-all duration-200', authUser?.role === 'secretaire' ? 'cursor-pointer hover:shadow-md hover:scale-[1.02]' : '', TYPE_CLS[a.type] || 'bg-muted border-border')"
+                @click="authStore.role === 'secretaire' ? openEditRv(a) : null"
+                :class="cn('p-2.5 rounded-xl border transition-all duration-200', authStore.role === 'secretaire' ? 'cursor-pointer hover:shadow-md hover:scale-[1.02]' : '', TYPE_CLS[a.type] || 'bg-muted border-border')"
               >
                 <p class="text-xs font-semibold leading-tight truncate">{{ a.patientName?.split(' ')[0] }}</p>
                 <p class="text-xs font-semibold leading-tight truncate opacity-70">{{ a.patientName?.split(' ').slice(1).join(' ') }}</p>
@@ -279,8 +281,8 @@ const avatarColor = (name = '') => AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AV
           v-motion
           :initial="{ opacity: 0, x: -8 }"
           :enter="{ opacity: 1, x: 0, transition: { delay: i * 30 } }"
-          :class="cn('flex items-center gap-3 p-3 rounded-xl transition-colors', authUser?.role === 'secretaire' ? 'hover:bg-accent/50 cursor-pointer' : '', a.day < toISO(new Date()) ? 'opacity-50' : '')"
-          @click="authUser?.role === 'secretaire' ? openEditRv(a) : null"
+          :class="cn('flex items-center gap-3 p-3 rounded-xl transition-colors', authStore.role === 'secretaire' ? 'hover:bg-accent/50 cursor-pointer' : '', a.day < toISO(new Date()) ? 'opacity-50' : '')"
+          @click="authStore.role === 'secretaire' ? openEditRv(a) : null"
         >
           <div :class="['w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0', avatarColor(a.patientName?.split(' ')[0])]">
             {{ initials(a.patientName?.split(' ')[0], a.patientName?.split(' ')[1]) }}

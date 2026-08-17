@@ -12,6 +12,7 @@ import {
   UserPlus
 } from 'lucide-vue-next'
 import { useMedAppState } from '../composables/useMedAppState.js'
+import { useAuthStore } from '../stores/authStore.js'
 import { screens } from '../constants/medapp.js'
 import { cn } from '../lib/utils.js'
 
@@ -20,7 +21,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['toggle'])
-const { currentScreen, showScreen, authUser, logout } = useMedAppState()
+const { currentScreen, showScreen } = useMedAppState()
+const authStore = useAuthStore()
 
 const NAV = computed(() => {
   const items = [
@@ -29,7 +31,7 @@ const NAV = computed(() => {
     { s: screens.ordonnances, label: "Ordonnances", icon: FileText },
     { s: screens.agenda, label: "Agenda", icon: Calendar },
   ]
-  if (authUser.value?.role === 'admin') {
+  if (authStore.role === 'admin') {
     items.push({ s: screens.accountRequests, label: "Demandes d'accès", icon: UserPlus })
   }
   items.push({ s: screens.settings, label: "Paramètres", icon: Settings })
@@ -43,15 +45,14 @@ const isActive = (screen) => {
 }
 
 const initials = computed(() => {
-  const displayName = authUser.value?.name || authUser.value?.email || 'User'  
+  const displayName = authStore.user?.email || 'U'
   return displayName.slice(0, 1).toUpperCase()
 })
 
 const roleLabel = computed(() => {
-  const role = authUser.value?.role
-  if (role === 'medecin') return 'Médecin'
-  if (role === 'secretaire') return 'Secrétaire'
-  if (role === 'admin') return 'Administrateur'
+  if (authStore.role === 'medecin') return 'Médecin'
+  if (authStore.role === 'secretaire') return 'Secrétaire'
+  if (authStore.role === 'admin') return 'Administrateur'
   return 'Utilisateur'
 })
 </script>
@@ -135,12 +136,12 @@ const roleLabel = computed(() => {
           {{ initials }}
         </div>
         <div v-if="!collapsed" class="flex-1 min-w-0">
-          <p class="text-sm font-semibold text-foreground truncate">{{ authUser?.name || authUser?.email || 'Utilisateur' }}</p>
+          <p class="text-sm font-semibold text-foreground truncate">{{ authStore.user?.email || 'Utilisateur' }}</p>
           <p class="text-xs text-muted-foreground truncate">{{ roleLabel }}</p>
         </div>
         <button
           v-if="!collapsed"
-          @click="logout"
+          @click="authStore.logout"
           class="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors shrink-0"
           title="Déconnexion"
         >

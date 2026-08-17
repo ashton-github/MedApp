@@ -57,7 +57,7 @@ const submit = async (e) => {
   try {
     await authStore.login(email.value, password.value)
     success.value = true
-    // Navigation is handled inside authStore.login() via useMedAppState.signIn()
+    // Navigation to dashboard is handled directly inside authStore.login()
   } catch (err) {
     const msg = err.response?.data?.message
     const status = err.response?.status
