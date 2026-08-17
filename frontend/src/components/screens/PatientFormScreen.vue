@@ -13,12 +13,13 @@ import {
 } from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
 import { usePatientStore } from '../../stores/patientStore.js'
+import { useDoctorStore } from '../../stores/doctorStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
-import api from '../../services/api.js'
 
 const { showScreen, patientToEdit } = useMedAppState()
 const patientStore = usePatientStore()
+const doctorStore = useDoctorStore()
 
 const isEditMode = computed(() => !!patientToEdit.value)
 
@@ -42,15 +43,8 @@ const form = ref({
                           : ''
 })
 
-const doctors = ref([])
-
 onMounted(async () => {
-  try {
-    const { data } = await api.get('/users', { params: { role: 'MEDECIN' } })
-    doctors.value = data
-  } catch (err) {
-    console.error('Failed to fetch doctors', err)
-  }
+  await doctorStore.fetchDoctors()
 })
 
 // medicalHistory is stored as List<String> on backend; edit it as a newline-delimited textarea
@@ -221,7 +215,7 @@ const submit = async () => {
               <label class="text-sm font-medium text-foreground">Médecin référent (traitant)</label>
               <select v-model="form.referringDoctor" class="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground">
                 <option :value="null">Sélectionner un médecin</option>
-                <option v-for="doc in doctors" :key="doc.id" :value="doc.id">
+                <option v-for="doc in doctorStore.doctors" :key="doc.id" :value="doc.id">
                   Dr. {{ doc.prenom }} {{ doc.nom }}
                 </option>
               </select>

@@ -14,6 +14,7 @@ import { useMedAppState } from '../../composables/useMedAppState.js'
 import { useAuthStore } from '../../stores/authStore.js'
 import { useOrdonnanceStore } from '../../stores/ordonnanceStore.js'
 import { usePatientStore } from '../../stores/patientStore.js'
+import { useDoctorStore } from '../../stores/doctorStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
 
@@ -21,6 +22,7 @@ const { openNewOrdonnance, openEditOrdonnance, showScreen } = useMedAppState()
 const authStore = useAuthStore()
 const ordonnanceStore = useOrdonnanceStore()
 const patientStore = usePatientStore()
+const doctorStore = useDoctorStore()
 
 const filter = ref('ALL')
 const q = ref('')
@@ -37,6 +39,8 @@ const confirmArchive = async () => {
     archiveId.value = null
   }
 }
+const doctors = ref([])
+
 onMounted(async () => {
   ordonnanceStore.ordonnances = []
   if (patientStore.patients.length === 0) {
@@ -46,6 +50,8 @@ onMounted(async () => {
     const rx = await ordonnanceStore.fetchOrdonnancesByPatientId(p.id)
     ordonnanceStore.ordonnances.push(...rx)
   }
+
+  await doctorStore.fetchDoctors()
 })
 
 const getPatientName = (id) => {
@@ -53,15 +59,16 @@ const getPatientName = (id) => {
   return p ? `${p.firstName} ${p.lastName}` : 'Patient inconnu'
 }
 
-const list = computed(() => {
-  const defaultDocName = authStore.user?.email
-    ? `Dr. ${authStore.user.email.split('@')[0].charAt(0).toUpperCase() + authStore.user.email.split('@')[0].slice(1)}`
-    : 'Dr. inconnu'
+const getDoctorName = (patientId) => {
+  const p = patientStore.patients.find(x => x.id === patientId)
+  return doctorStore.getDoctorFullName(p?.referringDoctor)
+}
 
+const list = computed(() => {
   return ordonnanceStore.ordonnances.map(r => ({
     ...r,
     patientName: r.patientName || getPatientName(r.patientId),
-    doctorName: r.doctorName || defaultDocName
+    doctorName: r.doctorName || getDoctorName(r.patientId)
   })).filter(r => {
     const mf = filter.value === 'ALL' || r.status === filter.value
     const ms = r.patientName.toLowerCase().includes(q.value.toLowerCase()) || r.medications.some(m => m.name.toLowerCase().includes(q.value.toLowerCase()))

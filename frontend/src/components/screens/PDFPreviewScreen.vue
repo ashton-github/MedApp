@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
   ChevronRight,
   Download,
@@ -11,6 +11,7 @@ import {
 import { useMedAppState } from '../../composables/useMedAppState.js'
 import { useOrdonnanceStore } from '../../stores/ordonnanceStore.js'
 import { usePatientStore } from '../../stores/patientStore.js'
+import { useDoctorStore } from '../../stores/doctorStore.js'
 import { useAuthStore } from '../../stores/authStore.js'
 import { screens } from '../../constants/medapp.js'
 
@@ -18,13 +19,25 @@ const { showScreen } = useMedAppState()
 const authStore = useAuthStore()
 const ordonnanceStore = useOrdonnanceStore()
 const patientStore = usePatientStore()
+const doctorStore = useDoctorStore()
 
-const fallbackDoctorName = computed(() => {
-  if (authStore.user?.email) {
-    const namePart = authStore.user.email.split('@')[0]
-    return `Dr. ${namePart.charAt(0).toUpperCase() + namePart.slice(1)}`
+onMounted(async () => {
+  await doctorStore.fetchDoctors()
+})
+
+const p = computed(() => {
+  const patient = patientStore.patients.find(pt => pt.id === (ordonnanceStore.currentOrdonnance?.patientId || ''))
+  return patient || {
+    firstName: "Patient",
+    lastName: "Inconnu",
+    birthDate: "",
+    phone: "",
+    referringDoctor: null
   }
-  return 'Dr. Inconnu'
+})
+
+const realDoctorName = computed(() => {
+  return doctorStore.getDoctorFullName(p.value?.referringDoctor)
 })
 
 const rx = computed(() => {
@@ -35,7 +48,7 @@ const rx = computed(() => {
       patientId: "",
       issueDate: new Date().toISOString(),
       validityDate: new Date().toISOString(),
-      doctorName: fallbackDoctorName.value,
+      doctorName: realDoctorName.value,
       status: "ACTIVE",
       medications: [],
       notes: ""
@@ -43,19 +56,11 @@ const rx = computed(() => {
   }
   return {
     ...o,
-    doctorName: o.doctorName || fallbackDoctorName.value
+    doctorName: realDoctorName.value
   }
 })
 
-const p = computed(() => {
-  const patient = patientStore.patients.find(p => p.id === rx.value.patientId)
-  return patient || {
-    firstName: "Patient",
-    lastName: "Inconnu",
-    birthDate: "",
-    phone: ""
-  }
-})
+// the patient is already computed above
 
 const fmt = (d) => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : ''
 

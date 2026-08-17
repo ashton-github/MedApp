@@ -17,14 +17,15 @@ import {
 } from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
 import { usePatientStore } from '../../stores/patientStore.js'
+import { useDoctorStore } from '../../stores/doctorStore.js'
 import { useOrdonnanceStore } from '../../stores/ordonnanceStore.js'
 import { useAuthStore } from '../../stores/authStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
-import api from '../../services/api.js'
 
 const { showScreen, editPatient, selectedPatientId, openNewOrdonnance } = useMedAppState()
 const patientStore = usePatientStore()
+const doctorStore = useDoctorStore()
 const ordonnanceStore = useOrdonnanceStore()
 const authStore = useAuthStore()
 const isDoc = computed(() => authStore.role === 'medecin')
@@ -60,12 +61,8 @@ const avatarColor = (name) => AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AVATAR_
 
 const p = patientStore.currentPatient  // reactive ref from store
 
-const doctors = ref([])
 const doctorName = computed(() => {
-  const docId = patientStore.currentPatient?.referringDoctor
-  if (!docId) return null
-  const doc = doctors.value.find(d => d.id === docId)
-  return doc ? `Dr. ${doc.prenom} ${doc.nom}` : docId
+  return doctorStore.getDoctorFullName(patientStore.currentPatient?.referringDoctor)
 })
 
 onMounted(async () => {
@@ -73,12 +70,7 @@ onMounted(async () => {
     await patientStore.getPatientById(selectedPatientId.value)
     patientOrdonnances.value = await ordonnanceStore.fetchOrdonnancesByPatientId(selectedPatientId.value)
   }
-  try {
-    const { data } = await api.get('/users', { params: { role: 'MEDECIN' } })
-    doctors.value = data
-  } catch (err) {
-    console.error('Failed to fetch doctors', err)
-  }
+  await doctorStore.fetchDoctors()
 })
 </script>
 

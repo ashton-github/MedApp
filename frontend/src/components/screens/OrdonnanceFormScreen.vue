@@ -16,6 +16,7 @@ import {
 } from 'lucide-vue-next'
 import { useMedAppState } from '../../composables/useMedAppState.js'
 import { usePatientStore } from '../../stores/patientStore.js'
+import { useDoctorStore } from '../../stores/doctorStore.js'
 import { useOrdonnanceStore } from '../../stores/ordonnanceStore.js'
 import { useAuthStore } from '../../stores/authStore.js'
 import { screens } from '../../constants/medapp.js'
@@ -24,6 +25,7 @@ import { cn } from '../../lib/utils.js'
 const { showScreen } = useMedAppState()
 const authStore = useAuthStore()
 const patientStore = usePatientStore()
+const doctorStore = useDoctorStore()
 const ordonnanceStore = useOrdonnanceStore()
 const { selectedPatientId, ordonnanceToEdit } = useMedAppState()
 
@@ -48,6 +50,10 @@ const goBackToList = () => {
   showScreen(screens.ordonnances)
 }
 
+const getReferringDoctorName = () => {
+  return doctorStore.getDoctorFullName(sel.value?.referringDoctor)
+}
+
 const openPreview = () => {
   ordonnanceStore.currentOrdonnance = {
     id: ordonnanceToEdit.value?.id || 'brouillon',
@@ -63,9 +69,7 @@ const openPreview = () => {
       duration: m.duration || ''
     })),
     patientName: sel.value ? `${sel.value.firstName} ${sel.value.lastName}` : '',
-    doctorName: authStore.user?.email
-      ? `Dr. ${authStore.user.email.split('@')[0].charAt(0).toUpperCase() + authStore.user.email.split('@')[0].slice(1)}`
-      : ''
+    doctorName: getReferringDoctorName()
   }
   showScreen(screens.pdfPreview)
 }
@@ -103,6 +107,8 @@ onMounted(async () => {
       sel.value = patientStore.currentPatient
     }
   }
+
+  await doctorStore.fetchDoctors()
 })
 
 const sug = computed(() => {
