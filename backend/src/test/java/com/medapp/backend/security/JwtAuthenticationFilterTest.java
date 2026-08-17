@@ -5,17 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.exceptions.base.MockitoException;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.medapp.backend.TestDataFactory;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.model.User;
 
@@ -51,7 +50,7 @@ public class JwtAuthenticationFilterTest {
     @Test
     void doFilterInternal_authentifieUtilisateur_siTokenValide()throws Exception {
         //
-        User user = new User("medcin@medapp.com" , "hashedPassword" , "Dupont" , "Jean" , Role.MEDECIN , true , LocalDateTime.now() , null);
+        User user = TestDataFactory.unUtilisateur(Role.MEDECIN);
         user.setId("user-id-123");
         String token = jwtService.generateAccessToken(user);
 
@@ -103,8 +102,7 @@ public class JwtAuthenticationFilterTest {
    @Test
     void doFilterInternal_neFaitRien_siRefreshTokenUtiliseCommeAccessToken() throws Exception {
         // Given
-        User user = new User("medecin@medapp.com", "hashedPassword", "Dupont", "Jean",
-                Role.MEDECIN, true, LocalDateTime.now(), null);
+        User user = TestDataFactory.unUtilisateur(Role.MEDECIN);
         user.setId("user-id-123");
         String refreshToken = jwtService.generateRefreshToken(user);
 

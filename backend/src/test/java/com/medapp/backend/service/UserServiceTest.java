@@ -12,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.medapp.backend.TestDataFactory;
 import com.medapp.backend.dto.UserResponse;
 import com.medapp.backend.model.Role;
 import com.medapp.backend.model.User;
@@ -28,9 +29,11 @@ public class UserServiceTest {
 
     @Test
     void listerMedecinsActifs_retourneDesUserResponseSansMotDePasse() {
-        User medecin = new User("m@medapp.com", "hashedpw123", "Martin", "Jean",
-            Role.MEDECIN, true, LocalDateTime.now(), null);
+        User medecin = TestDataFactory.unUtilisateur(Role.MEDECIN);
+        
         medecin.setId("medecin-1");
+        medecin.setNom("Martin");
+        medecin.setPrenom("Jean");
 
         when(userRepository.findByRoleAndActifTrue(Role.MEDECIN)).thenReturn(List.of(medecin));
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useOrdonnanceStore } from '../src/stores/ordonnanceStore.js'
-import api from '../src/services/api.js'
+import { useOrdonnanceStore } from '../../src/stores/ordonnanceStore.js'
+import api from '../../src/services/api.js'
 
 vi.mock('../src/services/api.js', () => ({
   default: {

@@ -2,8 +2,6 @@ package com.medapp.backend.repository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
@@ -15,8 +13,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import com.medapp.backend.TestDataFactory;
 import com.medapp.backend.model.Patient;
-import com.medapp.backend.model.Sexe;
 
 import org.testcontainers.junit.jupiter.Container;
 
@@ -39,9 +37,7 @@ public class PatientRepositoryTest {
 
     @Test
     void recherche_retournePatient_dontLeNomContientLaRequete_insensibleALaCasse(){
-        Patient patient = new Patient( "Dupont" , "Marie" , LocalDate.of(1990 , 5 , 12) , Sexe.F ,
-                "12345678" , "12 rue de la Paix" , "1900512123456" ,
-            List.of("Diabéte type 2") , null , LocalDateTime.now() , null );
+        Patient patient = TestDataFactory.unPatient();
 
 
         patientRepository.save(patient);
@@ -51,17 +47,16 @@ public class PatientRepositoryTest {
         assertEquals("Dupont", resultats.get(0).getNom());
     }
 
-      @Test
+    @Test
     void recherche_retournePatient_dontLePrenomContientLaRequete_insensibleALaCasse() {
-        Patient patient = new Patient("Martin", "Sophie", LocalDate.of(1985, 3, 20), Sexe.F,
-                "98765432", "5 avenue Habib Bourguiba", "1850320654321",
-                List.of(), null, LocalDateTime.now(), null);
+        
+        Patient patient = TestDataFactory.unPatient();
         patientRepository.save(patient);
 
-        List<Patient> resultats = patientRepository.findByPrenomContainingIgnoreCase("soph");
+        List<Patient> resultats = patientRepository.findByPrenomContainingIgnoreCase("Mar");
 
         assertEquals(1, resultats.size());
-        assertEquals("Sophie", resultats.get(0).getPrenom());
+        assertEquals("Marie", resultats.get(0).getPrenom());
     }
     
     

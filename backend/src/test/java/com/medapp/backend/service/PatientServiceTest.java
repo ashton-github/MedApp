@@ -1,7 +1,9 @@
 package com.medapp.backend.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -10,7 +12,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,12 +25,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import com.medapp.backend.TestDataFactory;
 import com.medapp.backend.exception.DonneesInvalidesException;
 import com.medapp.backend.exception.NumeroSecuriteSocialeDejaExistantException;
 import com.medapp.backend.exception.PatientIntrouvableException;
 import com.medapp.backend.model.Patient;
 import com.medapp.backend.model.Role;
-import com.medapp.backend.model.Sexe;
 import com.medapp.backend.model.User;
 import com.medapp.backend.repository.PatientRepository;
 import com.medapp.backend.repository.UserRepository;
@@ -51,10 +52,8 @@ public class PatientServiceTest {
     @Test
     void creerPatient_reussit_siDonneesValides(){
         //given
-        Patient patient = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-                "12345678", "12 rue de la Paix", "1900512123456",
-                List.of("Diabète type 2"), null, null, null);
-
+        Patient patient = TestDataFactory.unPatient();
+        
         when(patientRepository.save(any(Patient.class))).thenAnswer(invocation -> invocation.getArgument(0));
         //when
         Patient patientCree = patientService.creerPatient(patient);
@@ -69,15 +68,13 @@ public class PatientServiceTest {
     void creerPatient_lanceException_siNumeroSecuriteSocialeDejaExistant(){
         //given
         String numero = "1900512123456";
-        Patient patientExistant = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-                "12345678", "12 rue de la Paix", numero,
-                List.of(), null, null, null);
-
+        Patient patientExistant = TestDataFactory.unPatient();
+        patientExistant.setNumeroSecuriteSociale(numero);
+        
         when(patientRepository.findByNumeroSecuriteSociale(numero)).thenReturn(Optional.of(patientExistant));
 
-         Patient nouveauPatient = new Patient("Martin", "Paul", LocalDate.of(1985, 1, 1), Sexe.M,
-                "87654321", "1 rue de Rome", numero,
-                List.of(), null, null, null);
+        Patient nouveauPatient = TestDataFactory.unPatient();
+        nouveauPatient.setNumeroSecuriteSociale(numero);
 
         assertThrows(NumeroSecuriteSocialeDejaExistantException.class, () -> 
             patientService.creerPatient(nouveauPatient)
@@ -89,10 +86,9 @@ public class PatientServiceTest {
     @Test
     void creerPatient_lanceException_siDonneesInvalides(){
         //given
-        Patient patientDateFuture = new Patient("Dupont", "Marie", LocalDate.now().plusDays(1), Sexe.F,
-                "12345678", "12 rue de la Paix", "1900512123457",
-                List.of(), null, null, null);
-
+        Patient patientDateFuture = TestDataFactory.unPatient();
+        patientDateFuture.setDateNaissance(LocalDate.now().plusDays(1)); // date de naissance dans le futur
+     
         assertThrows(DonneesInvalidesException.class, () -> 
             patientService.creerPatient(patientDateFuture));
 
@@ -102,13 +98,13 @@ public class PatientServiceTest {
     @Test
     void rechercherPatients_retournePatientsCorrespondants_parNomOuPrenom(){
         String requete = "dupo";
-        Patient patient1 = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-                "12345678", "12 rue de la Paix", "1900512123458",
-                List.of(), null, null, null);
+
+        Patient patient1 = TestDataFactory.unPatient();
         patient1.setId("patient-1");
-        Patient patient2 = new Patient("Martin", "Dupois", LocalDate.of(1985, 1, 1), Sexe.M,
-                "87654321", "1 rue de Rome", "1850101654322",
-                List.of(), null, null, null);
+
+        Patient patient2 = TestDataFactory.unPatient();
+        patient2.setNom("Martin");
+        patient2.setPrenom("Dupois");
         patient2.setId("patient-2");
 
         when(patientRepository.findByNomContainingIgnoreCase(requete)).thenReturn(List.of(patient1));
@@ -131,14 +127,11 @@ public class PatientServiceTest {
     @Test
     void modifierPatient_metAJourDateMiseAJour_siDonneesValides(){
         String id = "patient-existant-id";
-        Patient patientExistant = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-                "12345678", "12 rue de la Paix", "1900512123459",
-                List.of(), null, null, null);
+        Patient patientExistant = TestDataFactory.unPatient();
         patientExistant.setId(id);
 
-        Patient patientModifie = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-                "99999999", "12 rue de la Paix", "1900512123459",
-                List.of(), null, null, null);
+        Patient patientModifie = TestDataFactory.unPatient();
+        patientModifie.setTelephone("99999999");
 
         when(patientRepository.findById(id)).thenReturn(Optional.of(patientExistant));
         when(patientRepository.save(any(Patient.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -154,9 +147,7 @@ public class PatientServiceTest {
     void modifierPatient_lanceException_siIdInexistant() {
         // given
         String idInexistant = "id-inexistant";
-        Patient patientModifie = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-                "99999999", "12 rue de la Paix", "1900512123459",
-                List.of(), null, null, null);
+        Patient patientModifie = TestDataFactory.unPatient();
 
         when(patientRepository.findById(idInexistant)).thenReturn(Optional.empty());
 
@@ -171,9 +162,7 @@ public class PatientServiceTest {
     void supprimerPatient_reussit_siPatientExiste() {
         // given
         String id = "patient-existant-id";
-        Patient patientExistant = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-                "12345678", "12 rue de la Paix", "1900512123460",
-                List.of(), null, null, null);
+        Patient patientExistant = TestDataFactory.unPatient();
         patientExistant.setId(id);
 
         when(patientRepository.findById(id)).thenReturn(Optional.of(patientExistant));
@@ -197,9 +186,8 @@ public class PatientServiceTest {
 
     @Test
     void masquerNumeroSecuriteSociale_pourRoleSecretaire(){
-        Patient patient = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-        "12345678", "12 rue de la Paix", "1900512123456",
-        List.of(), null, null, null);
+        Patient patient = TestDataFactory.unPatient();
+        patient.setNumeroSecuriteSociale("1900512123456");
 
         Patient result = patientService.appliquerMasquageSelonRole(patient , Role.SECRETAIRE);
         assertEquals("XXXXXXXXXX456", result.getNumeroSecuriteSociale());
@@ -208,13 +196,11 @@ public class PatientServiceTest {
     @Test 
     void nePasMasquerNumeroSecuriteSociale_pourRoleMedecinOuAdmin(){
        
-         Patient patientPourMedecin = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-            "12345678", "12 rue de la Paix", "1900512123456",
-            List.of(), null, null, null);
-        Patient patientPourAdmin = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-            "12345678", "12 rue de la Paix", "1900512123456",
-            List.of(), null, null, null);
-
+        Patient patientPourMedecin = TestDataFactory.unPatient();
+        patientPourMedecin.setNumeroSecuriteSociale("1900512123456");
+        Patient patientPourAdmin = TestDataFactory.unPatient();
+        patientPourAdmin.setNumeroSecuriteSociale("1900512123456");
+       
         Patient resultMedecin = patientService.appliquerMasquageSelonRole(patientPourMedecin , Role.MEDECIN);
         Patient resultAdmin = patientService.appliquerMasquageSelonRole(patientPourAdmin , Role.ADMIN);
 
@@ -225,10 +211,7 @@ public class PatientServiceTest {
 
     @Test 
     void listerPatients_retourneUnePageDePatients(){
-        Patient patient1 = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-                "12345678", "12 rue de la Paix", "1900512100010",
-                List.of(), null, null, null);
-
+        Patient patient1 = TestDataFactory.unPatient();
         patient1.setId("patient-1");
 
         Pageable pageable = PageRequest.of(0 , 10 );
@@ -247,15 +230,12 @@ public class PatientServiceTest {
     @Test
     void modifierPatient_metAJourLePrenom_siDonneesValides() {
         String id = "patient-existant-id";
-        Patient patientExistant = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-            "12345678", "12 rue de la Paix", "1900512123459",
-            List.of(), null, null, null);
+        Patient patientExistant = TestDataFactory.unPatient();
         patientExistant.setId(id);
-
-        Patient patientModifie = new Patient("Dupont", "Marie-Claire", LocalDate.of(1990, 5, 12), Sexe.F,
-            "12345678", "12 rue de la Paix", "1900512123459",
-            List.of(), null, null, null);
-
+        
+        Patient patientModifie = TestDataFactory.unPatient();
+        patientModifie.setPrenom("Marie-Claire");   
+        
         when(patientRepository.findById(id)).thenReturn(Optional.of(patientExistant));
         when(patientRepository.save(any(Patient.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -268,21 +248,17 @@ public class PatientServiceTest {
     void modifierPatient_lanceException_siNouveauNumeroSecuriteSocialeDejaExistatn(){
         String id = "patient-existant-id";
 
-        Patient patientExistant = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-            "12345678", "12 rue de la Paix", "1900512123459",
-            List.of(), null, null, null);
+        Patient patientExistant = TestDataFactory.unPatient();
         patientExistant.setId(id);
 
-        Patient patientModifie = new Patient("Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-            "12345678", "12 rue de la Paix", "1900513999999", // NSS belonging to another patient
-            List.of(), null, null, null);
+        Patient patientModifie = TestDataFactory.unPatient();
+        patientModifie.setNumeroSecuriteSociale("1900513999999"); // NSS belonging to another patient
+        patientModifie.setId("patient-modifie-id");
 
-        Patient autrePatient = new Patient("Martin", "Julie", LocalDate.of(1985, 3, 1), Sexe.F,
-            "99999999", "1 avenue X", "1900513999999",
-            List.of(), null, null, null);
+        Patient autrePatient = TestDataFactory.unPatient();
+        autrePatient.setNumeroSecuriteSociale("1900513999999"); // NSS belonging to another patient
         autrePatient.setId("autre-patient-id");
 
-        autrePatient.setId("autre-patient-id");
         when(patientRepository.findById(id)).thenReturn(Optional.of(patientExistant));
         when((patientRepository.findByNumeroSecuriteSociale("1900513999999"))).thenReturn(Optional.of(autrePatient));
 
@@ -293,10 +269,8 @@ public class PatientServiceTest {
 
     @Test
     void creerPatient_reussit_siMedcinReferentAbsent(){
-        Patient patient = new Patient("Dupont", "Marie", LocalDate.of(1990,5,12), Sexe.F,
-        "12345678", "12 rue de la Paix", "1900512123459",
-        List.of(), null, null, null);  // medecinReferent = null
-
+        Patient patient = TestDataFactory.unPatient();
+       
         when(patientRepository.findByNumeroSecuriteSociale(any())).thenReturn(Optional.empty());
         when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -307,10 +281,8 @@ public class PatientServiceTest {
 
     @Test
     void creerPatient_lanceException_siMedecinReferentInexistant(){
-        Patient patient = new Patient("Dupont", "Marie", LocalDate.of(1990,5,12), Sexe.F,
-        "12345678", "12 rue de la Paix", "1900512123459",
-        List.of(), "id-inexistant", null, null);
-
+        Patient patient = TestDataFactory.unPatient();
+        patient.setMedecinReferent("id-inexistant");
 
         when(patientRepository.findByNumeroSecuriteSociale(any())).thenReturn(Optional.empty());
         when(userRepository.findById("id-inexistant")).thenReturn(Optional.empty());
@@ -322,11 +294,10 @@ public class PatientServiceTest {
     @Test
     void creerPatient_lanceException_siMedecinReferentNaPasLeRoleMedecin(){
 
-        Patient patient = new Patient("Dupont", "Marie", LocalDate.of(1990,5,12), Sexe.F,
-        "12345678", "12 rue de la Paix", "1900512123459",
-        List.of(), "id-secretaire", null, null);
+        Patient patient = TestDataFactory.unPatient();
+        patient.setMedecinReferent("id-secretaire");
 
-        User secretaire = new User("s@medapp.com", "hash", "Sec", "Retaire", Role.SECRETAIRE, true, LocalDateTime.now(), null);
+        User secretaire = TestDataFactory.unUtilisateur(Role.SECRETAIRE);
         secretaire.setId("id-secretaire");
 
         when(patientRepository.findByNumeroSecuriteSociale(any())).thenReturn(Optional.empty());
@@ -335,4 +306,111 @@ public class PatientServiceTest {
         assertThrows(DonneesInvalidesException.class,
             () -> patientService.creerPatient(patient));
     }
+
+        @Test
+        void creerPatient_reussit_siDateNaissanceNulle(){
+            // Couvre la branche "dateNaissance == null" (court-circuit du &&, L37)
+            Patient patient = TestDataFactory.unPatient();
+            patient.setDateNaissance(null);
+    
+            when(patientRepository.findByNumeroSecuriteSociale(any())).thenReturn(Optional.empty());
+            when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> inv.getArgument(0));
+    
+            Patient result = patientService.creerPatient(patient);
+    
+            assertNotNull(result);
+        }
+
+            @Test
+        void modifierPatient_neVerifiePasDoublon_siNumeroNonFourni(){
+            // Couvre la branche "nouveauNumero == null" (court-circuit du &&, L70)
+            String id = "patient-existant-id";
+            Patient patientExistant = TestDataFactory.unPatient();
+            patientExistant.setId(id);
+            patientExistant.setNumeroSecuriteSociale("1900512123456");
+    
+            Patient patientModifie = TestDataFactory.unPatient();
+            patientModifie.setNumeroSecuriteSociale(null);
+    
+            when(patientRepository.findById(id)).thenReturn(Optional.of(patientExistant));
+            when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> inv.getArgument(0));
+    
+            patientService.modifierPatient(id, patientModifie);
+    
+            verify(patientRepository, never()).findByNumeroSecuriteSociale(anyString());
+        }
+
+            @Test
+        void modifierPatient_neLancePasException_siNumeroAppartientAuPatientLuiMeme(){
+            // Couvre la branche du filter() où le patient trouvé EST le patient
+            // en cours de modification (L72) — pas un vrai doublon.
+            String id = "patient-existant-id";
+            Patient patientExistant = TestDataFactory.unPatient();
+            patientExistant.setId(id);
+            patientExistant.setNumeroSecuriteSociale("1900512111111");
+    
+            Patient patientModifie = TestDataFactory.unPatient();
+            patientModifie.setNumeroSecuriteSociale("1900512222222");
+    
+            Patient memePatientTrouve = TestDataFactory.unPatient();
+            memePatientTrouve.setId(id); // même id que le patient modifié
+            memePatientTrouve.setNumeroSecuriteSociale("1900512222222");
+    
+            when(patientRepository.findById(id)).thenReturn(Optional.of(patientExistant));
+            when(patientRepository.findByNumeroSecuriteSociale("1900512222222"))
+                .thenReturn(Optional.of(memePatientTrouve));
+            when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> inv.getArgument(0));
+    
+            assertDoesNotThrow(() -> patientService.modifierPatient(id, patientModifie));
+        }
+
+            @Test
+        void appliquerMasquageSelonRole_neMasquePas_siNumeroNull(){
+            // Couvre la branche "numero == null" (L104)
+            Patient patient = TestDataFactory.unPatient();
+            patient.setNumeroSecuriteSociale(null);
+    
+            Patient result = patientService.appliquerMasquageSelonRole(patient, Role.SECRETAIRE);
+    
+            assertNull(result.getNumeroSecuriteSociale());
+        }
+
+            @Test
+        void appliquerMasquageSelonRole_neMasquePas_siNumeroTropCourt(){
+            // Couvre la branche "numero.length() < 3" (L104)
+            Patient patient = TestDataFactory.unPatient();
+            patient.setNumeroSecuriteSociale("12");
+    
+            Patient result = patientService.appliquerMasquageSelonRole(patient, Role.SECRETAIRE);
+    
+            assertEquals("12", result.getNumeroSecuriteSociale());
+        }
+
+            @Test
+        void creerPatient_reussit_siMedecinReferentEstValide(){
+            // Couvre la branche de succès de validerMedecinReferent (L123-126),
+            // jamais atteinte jusqu'ici : seuls les cas d'erreur étaient testés.
+            Patient patient = TestDataFactory.unPatient();
+            patient.setMedecinReferent("id-medecin");
+    
+            User medecin = TestDataFactory.unUtilisateur(Role.MEDECIN);
+            medecin.setId("id-medecin");
+    
+            when(patientRepository.findByNumeroSecuriteSociale(any())).thenReturn(Optional.empty());
+            when(userRepository.findById("id-medecin")).thenReturn(Optional.of(medecin));
+            when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> inv.getArgument(0));
+    
+            Patient result = patientService.creerPatient(patient);
+    
+            assertNotNull(result);
+            verify(userRepository).findById("id-medecin");
+        }
+
+
+
+
+
+
+
+
 }

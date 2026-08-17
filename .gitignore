@@ -7,3 +7,4 @@ dist/
 target/
 *.log
 jacoco-report/
+coverage/

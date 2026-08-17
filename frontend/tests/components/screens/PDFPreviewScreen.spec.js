@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import PDFPreviewScreen from '../src/components/screens/PDFPreviewScreen.vue'
-import { screens } from '../src/constants/medapp.js'
+import { screens } from '../../../src/constants/medapp.js'
 
 import { ref } from 'vue'
 

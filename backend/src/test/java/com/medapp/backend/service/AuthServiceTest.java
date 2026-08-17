@@ -32,7 +32,6 @@ import static org.mockito.Mockito.never;
 
 
 
-
 @ExtendWith(MockitoExtension.class)
 public class AuthServiceTest {
 

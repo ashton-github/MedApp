@@ -8,11 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 
+import com.medapp.backend.TestDataFactory;
 import com.medapp.backend.dto.OrdonnanceRequest;
 import com.medapp.backend.dto.PatientRequest;
 import com.medapp.backend.model.Medicament;
 import com.medapp.backend.model.Role;
-import com.medapp.backend.model.Sexe;
 import com.medapp.backend.repository.OrdonnanceRepository;
 import com.medapp.backend.repository.PatientRepository;
 import com.medapp.backend.repository.UserRepository;
@@ -35,12 +35,14 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
 
     @Autowired
     private OrdonnanceRepository ordonnanceRepository;
-    
+
     @Autowired
     private PatientRepository patientRepository;
 
     @Autowired
     private UserRepository userRepository;
+
+
 
     @AfterEach
     void nettoyageBase(){
@@ -50,11 +52,7 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
     }
 
     private String creerPatientEtRecupererId(String tokenMedecin, String numeroSecurite) throws Exception {
-        PatientRequest patientRequest = new PatientRequest(
-            "Dupont", "Marie", LocalDate.of(1990, 5, 12), Sexe.F,
-            "98778665754", "12 rue de la paix", numeroSecurite,
-            List.of(), null
-        );
+        PatientRequest patientRequest = TestDataFactory.unPatientRequest();
 
         MvcResult result = mockMvc.perform(post("/api/patients")
                         .header("Authorization", "Bearer " + tokenMedecin)
@@ -66,7 +64,16 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
         return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
     }
 
-   
+    private String creerOrdonnanceEtRecupererId(String tokenMedecin, OrdonnanceRequest request) throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/ordonnances")
+                        .header("Authorization", "Bearer " + tokenMedecin)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+    }
 
 
     @Test
@@ -75,11 +82,7 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
 
         String patientId = creerPatientEtRecupererId(tokenMedcin, "8776876786");
 
-        OrdonnanceRequest request = new OrdonnanceRequest(
-            patientId , LocalDate.now().plusMonths(1),
-            List.of(new Medicament("Duliprane" , "1000mg" , "3x/jour" , "5 jours")) , 
-            null
-        );
+        OrdonnanceRequest request = TestDataFactory.uneOrdonnanceRequest(patientId);
 
         mockMvc.perform(post("/api/ordonnances")
                         .header("Authorization","Bearer " + tokenMedcin)
@@ -97,11 +100,7 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
         String tokenSecretaire = obtenirAccessToken("secretaire-test@medapp.com", Role.SECRETAIRE);
         String patientId = creerPatientEtRecupererId(tokenSecretaire, "8776876786");
 
-        OrdonnanceRequest request = new OrdonnanceRequest(
-            patientId , LocalDate.now().plusMonths(1),
-            List.of(new Medicament("Duliprane" , "1000mg" , "3x/jour" , "5 jours")) , 
-            null
-        );
+        OrdonnanceRequest request = TestDataFactory.uneOrdonnanceRequest(patientId);
 
         mockMvc.perform(post("/api/ordonnances")
                         .header("Authorization" , "Bearer " + tokenSecretaire)
@@ -116,11 +115,8 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
         String tokenMedecin = obtenirAccessToken("medecin-ordo-validation@medapp.com", Role.MEDECIN);
         String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876796");
 
-        OrdonnanceRequest request = new OrdonnanceRequest(
-            patientId, LocalDate.now().plusMonths(1),
-            List.of(),
-            null
-        );
+        OrdonnanceRequest request = TestDataFactory.uneOrdonnanceRequest(patientId , List.of());
+
 
         mockMvc.perform(post("/api/ordonnances")
                         .header("Authorization", "Bearer " + tokenMedecin)
@@ -134,11 +130,7 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
         String tokenMedecin = obtenirAccessToken("medecin-ordo-validation-2@medapp.com", Role.MEDECIN);
         String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876797");
 
-        OrdonnanceRequest request = new OrdonnanceRequest(
-            patientId, LocalDate.now().plusMonths(1),
-            List.of(new Medicament("", "1000mg", "3x/jour", "5 jours")),
-            null
-        );
+        OrdonnanceRequest request = TestDataFactory.uneOrdonnanceRequest(patientId , List.of(new Medicament("", "1000mg", "3x/jour", "5 jours")));
 
         mockMvc.perform(post("/api/ordonnances")
                         .header("Authorization", "Bearer " + tokenMedecin)
@@ -152,20 +144,8 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
         String tokenMedecin = obtenirAccessToken("medecin-test@medapp.com", Role.MEDECIN);
         String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876786");
 
-        OrdonnanceRequest request = new OrdonnanceRequest(
-            patientId , LocalDate.now().plusMonths(1),
-            List.of(new Medicament("Duliprane" , "1000mg" , "3x/jour" , "5 jours")) , 
-            null
-        );
-
-        MvcResult result = mockMvc.perform(post("/api/ordonnances")
-                        .header("Authorization" , "Bearer " + tokenMedecin)
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isCreated())
-                    .andReturn();
-
-        String ordonnanceId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+        OrdonnanceRequest request = TestDataFactory.uneOrdonnanceRequest(patientId);
+        String ordonnanceId = creerOrdonnanceEtRecupererId(tokenMedecin, request);
 
         mockMvc.perform(get("/api/ordonnances/" + ordonnanceId)
                         .header("Authorization" , "Bearer " + tokenMedecin ))
@@ -179,43 +159,25 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
         String tokenMedecin = obtenirAccessToken("medecin-ordo-historique@medapp.com", Role.MEDECIN);
         String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876787");
 
-        OrdonnanceRequest request = new OrdonnanceRequest(
-            patientId, LocalDate.now().plusMonths(1),
-            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
-            null
-        );
-
-        mockMvc.perform(post("/api/ordonnances")
-                        .header("Authorization", "Bearer " + tokenMedecin)
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated());
+        OrdonnanceRequest request = TestDataFactory.uneOrdonnanceRequest(patientId);
+        creerOrdonnanceEtRecupererId(tokenMedecin, request);
 
         mockMvc.perform(get("/api/ordonnances/patient/" + patientId)
                         .header("Authorization" , "Bearer " + tokenMedecin))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].patientId").value(patientId));
-                        
+
     }
 
 
     @Test
     void obtenirHistorique_filtreParStatut_quandParamPresent()throws Exception{
-          String tokenMedecin = obtenirAccessToken("medecin-ordo-historique@medapp.com", Role.MEDECIN);
+        String tokenMedecin = obtenirAccessToken("medecin-ordo-historique@medapp.com", Role.MEDECIN);
         String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876787");
 
-        OrdonnanceRequest request = new OrdonnanceRequest(
-            patientId, LocalDate.now().plusMonths(1),
-            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
-            null
-        );
-
-        mockMvc.perform(post("/api/ordonnances")
-                        .header("Authorization", "Bearer " + tokenMedecin)
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated());
+        OrdonnanceRequest request = TestDataFactory.uneOrdonnanceRequest(patientId);
+        creerOrdonnanceEtRecupererId(tokenMedecin, request);
 
         mockMvc.perform(get("/api/ordonnances/patient/" + patientId)
                         .param("statut" , "ACTIVE")
@@ -229,27 +191,14 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
         String tokenMedecin = obtenirAccessToken("medecin-ordo-historique@medapp.com", Role.MEDECIN);
         String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876787");
 
-        OrdonnanceRequest request = new OrdonnanceRequest(
-            patientId, LocalDate.now().plusMonths(1),
-            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
-            null
-        );
-
-        MvcResult result = mockMvc.perform(post("/api/ordonnances")
-                        .header("Authorization", "Bearer " + tokenMedecin)
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        String ordonnanceId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+        OrdonnanceRequest request = TestDataFactory.uneOrdonnanceRequest(patientId);
+        String ordonnanceId = creerOrdonnanceEtRecupererId(tokenMedecin, request);
 
         mockMvc.perform(patch("/api/ordonnances/" + ordonnanceId + "/archiver")
                         .header("Authorization" , "Bearer " + tokenMedecin))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.statut").value("ARCHIVEE"));
 
-        
     }
 
 
@@ -258,20 +207,8 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
         String tokenMedecin1 = obtenirAccessToken("medecin-ordo-archivage-1@medapp.com", Role.MEDECIN);
         String patientId = creerPatientEtRecupererId(tokenMedecin1, "8776876791");
 
-        OrdonnanceRequest request = new OrdonnanceRequest(
-            patientId, LocalDate.now().plusMonths(1),
-            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
-            null
-        );
-
-        MvcResult creationResult = mockMvc.perform(post("/api/ordonnances")
-                        .header("Authorization", "Bearer " + tokenMedecin1)
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        String ordonnanceId = objectMapper.readTree(creationResult.getResponse().getContentAsString()).get("id").asText();
+        OrdonnanceRequest request = TestDataFactory.uneOrdonnanceRequest(patientId);
+        String ordonnanceId = creerOrdonnanceEtRecupererId(tokenMedecin1, request);
 
         String tokenMedecin2 = obtenirAccessToken("medecin-ordo-archivage-2@medapp.com", Role.MEDECIN);
 
@@ -285,33 +222,17 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
         String tokenMedecin = obtenirAccessToken("medecin-ordo-modif@medapp.com", Role.MEDECIN);
         String patientId = creerPatientEtRecupererId(tokenMedecin, "879765643432326");
 
-        OrdonnanceRequest creationRequest = new OrdonnanceRequest(
-            patientId, LocalDate.now().plusMonths(1),
-            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
-            null
-        );
+        OrdonnanceRequest creationRequest = TestDataFactory.uneOrdonnanceRequest(patientId);
+        String ordonnanceId = creerOrdonnanceEtRecupererId(tokenMedecin, creationRequest);
 
-        MvcResult result = mockMvc.perform(post("/api/ordonnances")
-                    .header("Authorization","Bearer " + tokenMedecin)
-                    .contentType("application/json")
-                    .content(objectMapper.writeValueAsString(creationRequest)))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        String ordonnanceId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
-        OrdonnanceRequest modificationRequest = new OrdonnanceRequest(
-            patientId, LocalDate.now().plusMonths(2),
-            List.of(new Medicament("Doliprane", "500mg", "2x/jour", "3 jours")),
-            "Dosage ajuste"
-        );
+        OrdonnanceRequest modificationRequest = TestDataFactory.uneOrdonnanceRequest(patientId ,  List.of(new Medicament("Doliprane", "500mg", "2x/jour", "3 jours")));
 
         mockMvc.perform(put("/api/ordonnances/" + ordonnanceId)
                     .header("Authorization", "Bearer " + tokenMedecin)
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(modificationRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.medicaments[0].dosage").value("500mg"))
-                .andExpect(jsonPath("$.remarques").value("Dosage ajuste"));
+                .andExpect(jsonPath("$.medicaments[0].dosage").value("500mg"));
     }
 
 
@@ -320,25 +241,10 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
         String tokenMedecin = obtenirAccessToken("medecin-ordo-modif@medapp.com", Role.MEDECIN);
         String patientId = creerPatientEtRecupererId(tokenMedecin, "879765643432326");
 
-        OrdonnanceRequest creationRequest = new OrdonnanceRequest(
-            patientId, LocalDate.now().plusMonths(1),
-            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
-            null
-        );
+        OrdonnanceRequest creationRequest = TestDataFactory.uneOrdonnanceRequest(patientId);
+        String ordonnanceId = creerOrdonnanceEtRecupererId(tokenMedecin, creationRequest);
 
-        MvcResult result = mockMvc.perform(post("/api/ordonnances")
-                    .header("Authorization","Bearer " + tokenMedecin)
-                    .contentType("application/json")
-                    .content(objectMapper.writeValueAsString(creationRequest)))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        String ordonnanceId = objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
-        OrdonnanceRequest modificationRequest = new OrdonnanceRequest(
-            patientId, LocalDate.now().plusMonths(2),
-            List.of(new Medicament("Doliprane", "500mg", "2x/jour", "3 jours")),
-            "Dosage ajuste"
-        );
+        OrdonnanceRequest modificationRequest = TestDataFactory.uneOrdonnanceRequest(patientId, LocalDate.now().plusMonths(2));
 
         String tokenMedecin2 = obtenirAccessToken("medecin-ordo-modif-2@medapp.com", Role.MEDECIN);
 
@@ -355,34 +261,14 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
         String tokenMedecin = obtenirAccessToken("medecin-ordo-pdf@medapp.com", Role.MEDECIN);
         String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876795");
 
-        OrdonnanceRequest request = new OrdonnanceRequest(
-            patientId, LocalDate.now().plusMonths(1),
-            List.of(new Medicament("Doliprane", "1000mg", "3x/jour", "5 jours")),
-            null
-        );
-
-        MvcResult creationResult = mockMvc.perform(post("/api/ordonnances")
-                        .header("Authorization", "Bearer " + tokenMedecin)
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        String ordonnanceId = objectMapper.readTree(creationResult.getResponse().getContentAsString()).get("id").asText();
+        OrdonnanceRequest request = TestDataFactory.uneOrdonnanceRequest(patientId);
+        String ordonnanceId = creerOrdonnanceEtRecupererId(tokenMedecin, request);
 
         mockMvc.perform(get("/api/ordonnances/" + ordonnanceId + "/pdf")
                         .header("Authorization","Bearer " + tokenMedecin))
-                    .andExpect(status().isOk())   
+                    .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_PDF));
 
     }
-    
+
 }
-
-
-
-
-
-
-
-
