@@ -17,10 +17,12 @@ import {
 import { useMedAppState } from '../../composables/useMedAppState.js'
 import { usePatientStore } from '../../stores/patientStore.js'
 import { useOrdonnanceStore } from '../../stores/ordonnanceStore.js'
+import { useAuthStore } from '../../stores/authStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
 
-const { showScreen, authUser } = useMedAppState()
+const { showScreen } = useMedAppState()
+const authStore = useAuthStore()
 const patientStore = usePatientStore()
 const ordonnanceStore = useOrdonnanceStore()
 const { selectedPatientId, ordonnanceToEdit } = useMedAppState()
@@ -32,6 +34,7 @@ const meds = ref([{ name: '', dosage: '', frequency: '', duration: '' }])
 const notes = ref('')
 const submitting = ref(false)
 const done = ref(false)
+const submitError = ref(null)
 
 const isEditMode = computed(() => Boolean(ordonnanceToEdit.value?.id))
 
@@ -60,8 +63,8 @@ const openPreview = () => {
       duration: m.duration || ''
     })),
     patientName: sel.value ? `${sel.value.firstName} ${sel.value.lastName}` : '',
-    doctorName: authUser.value?.email
-      ? `Dr. ${authUser.value.email.split('@')[0].charAt(0).toUpperCase() + authUser.value.email.split('@')[0].slice(1)}`
+    doctorName: authStore.user?.email
+      ? `Dr. ${authStore.user.email.split('@')[0].charAt(0).toUpperCase() + authStore.user.email.split('@')[0].slice(1)}`
       : ''
   }
   showScreen(screens.pdfPreview)
@@ -117,8 +120,9 @@ const submitLabel = computed(() => isEditMode.value ? 'Mettre à jour l\'ordonna
 const submittingLabel = computed(() => isEditMode.value ? 'Mise à jour…' : 'Création…')
 
 const submit = async () => {
+  submitError.value = null
   submitting.value = true
-  
+
   try {
     const payload = {
       patientId: sel.value.id,
@@ -133,13 +137,13 @@ const submit = async () => {
     } else {
       await ordonnanceStore.createOrdonnance(payload)
     }
-    
+
     done.value = true
     setTimeout(() => {
       goBackToList()
     }, 1400)
   } catch (err) {
-    // Error handled by store
+    submitError.value = ordonnanceStore.error || 'Une erreur est survenue.'
   } finally {
     submitting.value = false
   }
@@ -275,6 +279,12 @@ const initials = (f = '', l = '') => `${f?.[0] ?? '?'}${l?.[0] ?? '?'}`.toUpperC
           <h2 class="font-semibold text-foreground mb-4">Instructions supplémentaires (optionnel)</h2>
           <textarea v-model="notes" placeholder="Recommandations hygiéno-diététiques, précautions particulières…" rows="3" class="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground resize-none" />
         </div>
+        <!-- API error banner -->
+        <div v-if="submitError" class="flex items-center gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm">
+          <AlertCircle class="w-4 h-4 shrink-0" />
+          {{ submitError }}
+        </div>
+
         <div class="flex gap-3">
           <button @click="goBackToList" class="border border-border text-foreground hover:bg-accent inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-4 py-2 text-sm gap-2">
             Annuler

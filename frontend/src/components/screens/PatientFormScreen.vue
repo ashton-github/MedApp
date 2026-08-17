@@ -75,7 +75,10 @@ const submit = async () => {
     done.value = true
     setTimeout(() => goBack(), 1400)
   } catch (err) {
-    submitError.value = patientStore.error || 'Une erreur est survenue.'
+    submitError.value = patientStore.error
+      || err?.response?.data?.message
+      || err?.message
+      || 'Une erreur est survenue.'
     submitting.value  = false
   }
 }
