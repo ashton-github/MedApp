@@ -1,7 +1,9 @@
 package com.medapp.backend.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -304,4 +306,111 @@ public class PatientServiceTest {
         assertThrows(DonneesInvalidesException.class,
             () -> patientService.creerPatient(patient));
     }
+
+        @Test
+        void creerPatient_reussit_siDateNaissanceNulle(){
+            // Couvre la branche "dateNaissance == null" (court-circuit du &&, L37)
+            Patient patient = TestDataFactory.unPatient();
+            patient.setDateNaissance(null);
+    
+            when(patientRepository.findByNumeroSecuriteSociale(any())).thenReturn(Optional.empty());
+            when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> inv.getArgument(0));
+    
+            Patient result = patientService.creerPatient(patient);
+    
+            assertNotNull(result);
+        }
+
+            @Test
+        void modifierPatient_neVerifiePasDoublon_siNumeroNonFourni(){
+            // Couvre la branche "nouveauNumero == null" (court-circuit du &&, L70)
+            String id = "patient-existant-id";
+            Patient patientExistant = TestDataFactory.unPatient();
+            patientExistant.setId(id);
+            patientExistant.setNumeroSecuriteSociale("1900512123456");
+    
+            Patient patientModifie = TestDataFactory.unPatient();
+            patientModifie.setNumeroSecuriteSociale(null);
+    
+            when(patientRepository.findById(id)).thenReturn(Optional.of(patientExistant));
+            when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> inv.getArgument(0));
+    
+            patientService.modifierPatient(id, patientModifie);
+    
+            verify(patientRepository, never()).findByNumeroSecuriteSociale(anyString());
+        }
+
+            @Test
+        void modifierPatient_neLancePasException_siNumeroAppartientAuPatientLuiMeme(){
+            // Couvre la branche du filter() où le patient trouvé EST le patient
+            // en cours de modification (L72) — pas un vrai doublon.
+            String id = "patient-existant-id";
+            Patient patientExistant = TestDataFactory.unPatient();
+            patientExistant.setId(id);
+            patientExistant.setNumeroSecuriteSociale("1900512111111");
+    
+            Patient patientModifie = TestDataFactory.unPatient();
+            patientModifie.setNumeroSecuriteSociale("1900512222222");
+    
+            Patient memePatientTrouve = TestDataFactory.unPatient();
+            memePatientTrouve.setId(id); // même id que le patient modifié
+            memePatientTrouve.setNumeroSecuriteSociale("1900512222222");
+    
+            when(patientRepository.findById(id)).thenReturn(Optional.of(patientExistant));
+            when(patientRepository.findByNumeroSecuriteSociale("1900512222222"))
+                .thenReturn(Optional.of(memePatientTrouve));
+            when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> inv.getArgument(0));
+    
+            assertDoesNotThrow(() -> patientService.modifierPatient(id, patientModifie));
+        }
+
+            @Test
+        void appliquerMasquageSelonRole_neMasquePas_siNumeroNull(){
+            // Couvre la branche "numero == null" (L104)
+            Patient patient = TestDataFactory.unPatient();
+            patient.setNumeroSecuriteSociale(null);
+    
+            Patient result = patientService.appliquerMasquageSelonRole(patient, Role.SECRETAIRE);
+    
+            assertNull(result.getNumeroSecuriteSociale());
+        }
+
+            @Test
+        void appliquerMasquageSelonRole_neMasquePas_siNumeroTropCourt(){
+            // Couvre la branche "numero.length() < 3" (L104)
+            Patient patient = TestDataFactory.unPatient();
+            patient.setNumeroSecuriteSociale("12");
+    
+            Patient result = patientService.appliquerMasquageSelonRole(patient, Role.SECRETAIRE);
+    
+            assertEquals("12", result.getNumeroSecuriteSociale());
+        }
+
+            @Test
+        void creerPatient_reussit_siMedecinReferentEstValide(){
+            // Couvre la branche de succès de validerMedecinReferent (L123-126),
+            // jamais atteinte jusqu'ici : seuls les cas d'erreur étaient testés.
+            Patient patient = TestDataFactory.unPatient();
+            patient.setMedecinReferent("id-medecin");
+    
+            User medecin = TestDataFactory.unUtilisateur(Role.MEDECIN);
+            medecin.setId("id-medecin");
+    
+            when(patientRepository.findByNumeroSecuriteSociale(any())).thenReturn(Optional.empty());
+            when(userRepository.findById("id-medecin")).thenReturn(Optional.of(medecin));
+            when(patientRepository.save(any(Patient.class))).thenAnswer(inv -> inv.getArgument(0));
+    
+            Patient result = patientService.creerPatient(patient);
+    
+            assertNotNull(result);
+            verify(userRepository).findById("id-medecin");
+        }
+
+
+
+
+
+
+
+
 }
