@@ -15,6 +15,7 @@ import { useMedAppState } from '../../composables/useMedAppState.js'
 import { usePatientStore } from '../../stores/patientStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
+import api from '../../services/api.js'
 
 const { showScreen, patientToEdit } = useMedAppState()
 const patientStore = usePatientStore()
@@ -35,10 +36,21 @@ const form = ref({
   phone:                patientToEdit.value?.phone                || '',
   address:              patientToEdit.value?.address              || '',
   socialSecurityNumber: patientToEdit.value?.socialSecurityNumber || '',
-  referringDoctor:      patientToEdit.value?.referringDoctor      || '',
+  referringDoctor:      patientToEdit.value?.referringDoctor      || null,
   medicalHistory:       patientToEdit.value?.medicalHistory
                           ? patientToEdit.value.medicalHistory.join('\n')
                           : ''
+})
+
+const doctors = ref([])
+
+onMounted(async () => {
+  try {
+    const { data } = await api.get('/users', { params: { role: 'MEDECIN' } })
+    doctors.value = data
+  } catch (err) {
+    console.error('Failed to fetch doctors', err)
+  }
 })
 
 // medicalHistory is stored as List<String> on backend; edit it as a newline-delimited textarea
@@ -207,7 +219,12 @@ const submit = async () => {
             <h2 class="font-semibold text-foreground">Antécédents médicaux</h2>
             <div class="space-y-1.5">
               <label class="text-sm font-medium text-foreground">Médecin référent (traitant)</label>
-              <input v-model="form.referringDoctor" placeholder="Dr. Martin" class="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground placeholder:text-muted-foreground" />
+              <select v-model="form.referringDoctor" class="w-full h-10 px-3 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-foreground">
+                <option :value="null">Sélectionner un médecin</option>
+                <option v-for="doc in doctors" :key="doc.id" :value="doc.id">
+                  Dr. {{ doc.prenom }} {{ doc.nom }}
+                </option>
+              </select>
             </div>
             <div class="space-y-1.5">
               <label class="text-sm font-medium text-foreground">Antécédents médicaux <span class="text-muted-foreground font-normal text-xs">(un par ligne)</span></label>

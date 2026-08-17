@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
   ChevronRight,
   Pencil,
@@ -21,6 +21,7 @@ import { useOrdonnanceStore } from '../../stores/ordonnanceStore.js'
 import { useAuthStore } from '../../stores/authStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
+import api from '../../services/api.js'
 
 const { showScreen, editPatient, selectedPatientId, openNewOrdonnance } = useMedAppState()
 const patientStore = usePatientStore()
@@ -59,10 +60,24 @@ const avatarColor = (name) => AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AVATAR_
 
 const p = patientStore.currentPatient  // reactive ref from store
 
+const doctors = ref([])
+const doctorName = computed(() => {
+  const docId = patientStore.currentPatient?.referringDoctor
+  if (!docId) return null
+  const doc = doctors.value.find(d => d.id === docId)
+  return doc ? `Dr. ${doc.prenom} ${doc.nom}` : docId
+})
+
 onMounted(async () => {
   if (selectedPatientId.value) {
     await patientStore.getPatientById(selectedPatientId.value)
     patientOrdonnances.value = await ordonnanceStore.fetchOrdonnancesByPatientId(selectedPatientId.value)
+  }
+  try {
+    const { data } = await api.get('/users', { params: { role: 'MEDECIN' } })
+    doctors.value = data
+  } catch (err) {
+    console.error('Failed to fetch doctors', err)
   }
 })
 </script>
@@ -125,7 +140,7 @@ onMounted(async () => {
             <div v-for="it in [
               { label: 'Téléphone',          val: patientStore.currentPatient.phone,  icon: Phone },
               { label: 'N° Sécurité Sociale', val: isDoc ? patientStore.currentPatient.socialSecurityNumber : 'Restreint', icon: Shield, mask: !isDoc },
-              { label: 'Médecin référent',    val: patientStore.currentPatient.referringDoctor || '–', icon: Heart },
+              { label: 'Médecin référent',    val: doctorName || '–', icon: Heart },
             ]" :key="it.label">
               <p class="text-xs text-muted-foreground flex items-center gap-1"><component :is="it.icon" class="w-3 h-3" />{{ it.label }}</p>
               <p :class="cn('text-sm font-medium mt-0.5 truncate', it.mask ? 'text-muted-foreground flex items-center gap-1' : 'text-foreground')">
@@ -159,7 +174,7 @@ onMounted(async () => {
                 <div class="space-y-3">
                   <div v-for="it in [
                     { label: 'Antécédents médicaux', val: isDoc ? (patientStore.currentPatient.medicalHistory?.length ? patientStore.currentPatient.medicalHistory.join(', ') : 'Aucun antécédent renseigné') : null },
-                    { label: 'Médecin référent',     val: patientStore.currentPatient.referringDoctor || '–' }
+                    { label: 'Médecin référent',     val: doctorName || '–' }
                   ]" :key="it.label" class="flex items-center justify-between py-2.5 border-b border-border last:border-0">
                     <span class="text-sm text-muted-foreground">{{ it.label }}</span>
                     <span v-if="it.val !== null" class="text-sm font-medium text-foreground text-right max-w-[60%]">{{ it.val }}</span>
