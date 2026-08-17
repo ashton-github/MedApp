@@ -2,7 +2,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import OrdonnancesScreen from '../src/components/screens/OrdonnancesScreen.vue'
-import { screens } from '../src/constants/medapp.js'
+import { screens } from '../../../src/constants/medapp.js'
 
 import { ref, reactive } from 'vue'
 

@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import LoginScreen from '../src/components/screens/LoginScreen.vue'
-import { useAuthStore } from '../src/stores/authStore.js'
+import { useAuthStore } from '../../../src/stores/authStore.js'
 
 // Mock the authStore so tests do not make real HTTP calls
 vi.mock('../src/stores/authStore.js', () => ({

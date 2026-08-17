@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useAuthStore } from '../src/stores/authStore.js'
+import { useAuthStore } from '../../src/stores/authStore.js'
 
 // Mock the api module so no real HTTP calls are made
 vi.mock('../src/services/api.js', () => {
@@ -36,8 +36,8 @@ vi.mock('../src/constants/medapp.js', () => ({
 }))
 
 // Get the mocked api to configure responses per test
-import api from '../src/services/api.js'
-import { setAccessToken, clearAccessToken } from '../src/services/api.js'
+import api from '../../src/services/api.js'
+import { setAccessToken, clearAccessToken } from '../../src/services/api.js'
 
 describe('authStore', () => {
   beforeEach(() => {

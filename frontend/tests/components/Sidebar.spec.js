@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ref } from 'vue'
 import Sidebar from '../src/components/Sidebar.vue'
-import { screens } from '../src/constants/medapp.js'
+import { screens } from '../../src/constants/medapp.js'
 
 const mockShowScreen = vi.fn()
 const mockLogout = vi.fn()
