@@ -11,7 +11,6 @@ import OrdonnancesScreen from '../components/screens/OrdonnancesScreen.vue'
 import OrdonnanceFormScreen from '../components/screens/OrdonnanceFormScreen.vue'
 import PDFPreviewScreen from '../components/screens/PDFPreviewScreen.vue'
 import AgendaScreen from '../components/screens/AgendaScreen.vue'
-import AccountRequestsScreen from '../components/screens/AccountRequestsScreen.vue'
 import SettingsScreen from '../components/screens/SettingsScreen.vue'
 
 // meta.screen keeps each route mapped back to the legacy `screens.*` constant
@@ -89,12 +88,6 @@ const routes = [
         name: 'agenda',
         component: AgendaScreen,
         meta: { screen: screens.agenda }
-    },
-    {
-        path: '/demandes-acces',
-        name: 'account-requests',
-        component: AccountRequestsScreen,
-        meta: { screen: screens.accountRequests, roles: ['admin'] }
     },
     {
         path: '/parametres',
