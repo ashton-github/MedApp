@@ -31,9 +31,6 @@ const NAV = computed(() => {
     { s: screens.ordonnances, label: "Ordonnances", icon: FileText },
     { s: screens.agenda, label: "Agenda", icon: Calendar },
   ]
-  if (authStore.role === 'admin') {
-    items.push({ s: screens.accountRequests, label: "Demandes d'accès", icon: UserPlus })
-  }
   items.push({ s: screens.settings, label: "Paramètres", icon: Settings })
   return items
 })

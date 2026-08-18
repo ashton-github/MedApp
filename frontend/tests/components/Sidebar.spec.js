@@ -85,12 +85,6 @@ describe('Sidebar.vue', () => {
     expect(text).not.toContain("Demandes d'accès")
   })
 
-  it('renders Demandes d\'accès for admin role', () => {
-    authStore.role = 'admin'
-    const wrapper = createWrapper()
-
-    expect(wrapper.text()).toContain("Demandes d'accès")
-  })
 
   it('renders user details and correct role label dynamically', () => {
     const wrapper = createWrapper()
