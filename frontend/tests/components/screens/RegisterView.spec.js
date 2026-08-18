@@ -156,7 +156,7 @@ describe('RegisterView.vue', () => {
     await vi.advanceTimersByTimeAsync(1400)
 
     // Success should not appear because the form is invalid
-    expect(wrapper.text()).not.toContain('Demande envoyée !')
+    expect(wrapper.text()).not.toContain('Inscription réussie !')
     expect(wrapper.find('form').exists()).toBe(true)
   })
 
@@ -172,7 +172,7 @@ describe('RegisterView.vue', () => {
     await wrapper.vm.$nextTick()
 
     // Success screen should now be visible
-    expect(wrapper.text()).toContain('Demande envoyée !')
+    expect(wrapper.text()).toContain('Inscription réussie !')
     expect(wrapper.find('form').exists()).toBe(false)
 
     // Click the "Retour à la connexion" button
