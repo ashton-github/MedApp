@@ -1,17 +1,17 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import LoginScreen from '../src/components/screens/LoginScreen.vue'
+import LoginScreen from '../../../src/components/screens/LoginScreen.vue'
 import { useAuthStore } from '../../../src/stores/authStore.js'
 
 // Mock the authStore so tests do not make real HTTP calls
-vi.mock('../src/stores/authStore.js', () => ({
+vi.mock('../../../src/stores/authStore.js', () => ({
   useAuthStore: vi.fn()
 }))
 
 // Mock useMedAppState (used by authStore.login indirectly, but also maybe in components if any)
 const mockSignIn = vi.fn()
-vi.mock('../src/composables/useMedAppState.js', () => ({
+vi.mock('../../../src/composables/useMedAppState.js', () => ({
   useMedAppState: () => ({
     signIn: mockSignIn
   })

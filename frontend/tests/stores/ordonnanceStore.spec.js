@@ -3,7 +3,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { useOrdonnanceStore } from '../../src/stores/ordonnanceStore.js'
 import api from '../../src/services/api.js'
 
-vi.mock('../src/services/api.js', () => ({
+vi.mock('../../src/services/api.js', () => ({
   default: {
     get: vi.fn(),
     post: vi.fn(),

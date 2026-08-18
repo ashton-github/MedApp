@@ -11,40 +11,66 @@ import {
   Shield,
   AlertCircle
 } from 'lucide-vue-next'
+import { useRoute } from 'vue-router'
+import { router } from '../../router/index.js'
 import { useMedAppState } from '../../composables/useMedAppState.js'
 import { usePatientStore } from '../../stores/patientStore.js'
 import { useDoctorStore } from '../../stores/doctorStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
 
-const { showScreen, patientToEdit } = useMedAppState()
+const route = useRoute()
+const { showScreen } = useMedAppState()
 const patientStore = usePatientStore()
 const doctorStore = useDoctorStore()
 
-const isEditMode = computed(() => !!patientToEdit.value)
+// Edit mode is driven by the route itself (/patients/:id/modifier), not by
+// data passed in memory — this keeps the form F5-safe and the URL shareable.
+const isEditMode = computed(() => route.name === 'patient-edit')
+const patientId = computed(() => route.params.id || null)
 
 const step       = ref(1)
 const submitting = ref(false)
 const done       = ref(false)
 const submitError = ref(null)
+const loadingPatient = ref(false)
 
 // Form — English field names that map to PatientRequest via the store
 const form = ref({
-  firstName:            patientToEdit.value?.firstName            || '',
-  lastName:             patientToEdit.value?.lastName             || '',
-  birthDate:            patientToEdit.value?.birthDate            || '',  // "YYYY-MM-DD"
-  gender:               patientToEdit.value?.gender               || '',  // 'M' | 'F'
-  phone:                patientToEdit.value?.phone                || '',
-  address:              patientToEdit.value?.address              || '',
-  socialSecurityNumber: patientToEdit.value?.socialSecurityNumber || '',
-  referringDoctor:      patientToEdit.value?.referringDoctor      || null,
-  medicalHistory:       patientToEdit.value?.medicalHistory
-                          ? patientToEdit.value.medicalHistory.join('\n')
-                          : ''
+  firstName: '',
+  lastName: '',
+  birthDate: '',  // "YYYY-MM-DD"
+  gender: '',     // 'M' | 'F'
+  phone: '',
+  address: '',
+  socialSecurityNumber: '',
+  referringDoctor: null,
+  medicalHistory: ''
 })
+
+const fillFormFrom = (patient) => {
+  form.value = {
+    firstName:            patient?.firstName            || '',
+    lastName:             patient?.lastName             || '',
+    birthDate:            patient?.birthDate            || '',
+    gender:               patient?.gender               || '',
+    phone:                patient?.phone                || '',
+    address:              patient?.address              || '',
+    socialSecurityNumber: patient?.socialSecurityNumber || '',
+    referringDoctor:      patient?.referringDoctor      || null,
+    medicalHistory:       patient?.medicalHistory ? patient.medicalHistory.join('\n') : ''
+  }
+}
 
 onMounted(async () => {
   await doctorStore.fetchDoctors()
+
+  if (isEditMode.value && patientId.value) {
+    loadingPatient.value = true
+    await patientStore.getPatientById(patientId.value)
+    fillFormFrom(patientStore.currentPatient)
+    loadingPatient.value = false
+  }
 })
 
 // medicalHistory is stored as List<String> on backend; edit it as a newline-delimited textarea
@@ -62,7 +88,11 @@ const STEPS = [
 ]
 
 const goBack = () => {
-  showScreen(isEditMode.value ? screens.patientDetail : screens.patients)
+  if (isEditMode.value && patientId.value) {
+    router.push({ name: 'patient-detail', params: { id: patientId.value } })
+  } else {
+    showScreen(screens.patients)
+  }
 }
 
 const submit = async () => {
@@ -74,7 +104,7 @@ const submit = async () => {
   }
   try {
     if (isEditMode.value) {
-      await patientStore.updatePatient(patientToEdit.value.id, payload)
+      await patientStore.updatePatient(patientId.value, payload)
     } else {
       await patientStore.createPatient(payload)
     }

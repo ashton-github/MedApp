@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import PDFPreviewScreen from '../src/components/screens/PDFPreviewScreen.vue'
+import PDFPreviewScreen from '../../../src/components/screens/PDFPreviewScreen.vue'
 import { screens } from '../../../src/constants/medapp.js'
 
 import { ref } from 'vue'
@@ -13,7 +13,7 @@ const { mockShowScreen, mockAuthUser } = vi.hoisted(() => ({
 
 const authUserRef = ref(mockAuthUser)
 
-vi.mock('../src/composables/useMedAppState.js', () => ({
+vi.mock('../../../src/composables/useMedAppState.js', () => ({
   useMedAppState: () => ({
     showScreen: mockShowScreen,
     authUser: authUserRef
@@ -25,7 +25,7 @@ const mockOrdonnanceStore = {
   downloadPdf: vi.fn().mockResolvedValue()
 }
 
-vi.mock('../src/stores/ordonnanceStore.js', () => ({
+vi.mock('../../../src/stores/ordonnanceStore.js', () => ({
   useOrdonnanceStore: () => mockOrdonnanceStore
 }))
 
@@ -33,8 +33,22 @@ const mockPatientStore = {
   patients: []
 }
 
-vi.mock('../src/stores/patientStore.js', () => ({
+vi.mock('../../../src/stores/patientStore.js', () => ({
   usePatientStore: () => mockPatientStore
+}))
+
+const mockDoctorStore = {
+  doctors: [],
+  fetchDoctors: vi.fn().mockResolvedValue(),
+  getDoctorFullName: vi.fn((id) => {
+    if (!id) return 'Non renseigné'
+    const doc = mockDoctorStore.doctors.find((d) => d.id === id)
+    return doc ? `Dr. ${doc.prenom} ${doc.nom}` : 'Non renseigné'
+  })
+}
+
+vi.mock('../../../src/stores/doctorStore.js', () => ({
+  useDoctorStore: () => mockDoctorStore
 }))
 
 const sampleOrdonnance = {
@@ -55,7 +69,8 @@ const samplePatient = {
   firstName: 'Ali',
   lastName: 'Ben',
   birthDate: '1990-01-01',
-  phone: '+33 6 00 00 00 00'
+  phone: '+33 6 00 00 00 00',
+  referringDoctor: 'doc1'
 }
 
 const createWrapper = () =>
@@ -81,6 +96,8 @@ describe('PDFPreviewScreen.vue', () => {
     mockOrdonnanceStore.currentOrdonnance = null
     mockOrdonnanceStore.downloadPdf.mockClear()
     mockPatientStore.patients = []
+    mockDoctorStore.doctors = [{ id: 'doc1', prenom: 'Greg', nom: 'House' }]
+    mockDoctorStore.fetchDoctors.mockClear()
     authUserRef.value = { email: 'medecin@medapp.com', role: 'medecin' }
   })
 
@@ -92,7 +109,7 @@ describe('PDFPreviewScreen.vue', () => {
   it('renders fallback ordonnance/patient values when no current ordonnance is set', () => {
     const wrapper = createWrapper()
 
-    expect(wrapper.text()).toContain('Dr. Medecin')
+    expect(wrapper.text()).toContain('Non renseigné')
     expect(wrapper.text()).toContain('Patient Inconnu')
     expect(wrapper.text()).toContain('Aperçu PDF')
   })
@@ -103,7 +120,7 @@ describe('PDFPreviewScreen.vue', () => {
 
     const wrapper = createWrapper()
 
-    expect(wrapper.text()).toContain('Dr. House')
+    expect(wrapper.text()).toContain('Dr. Greg House')
     expect(wrapper.text()).toContain('Ali Ben')
     expect(wrapper.text()).toContain('Doliprane')
     expect(wrapper.text()).toContain('Après les repas')

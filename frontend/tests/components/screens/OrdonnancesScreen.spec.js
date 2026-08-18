@@ -1,8 +1,9 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import OrdonnancesScreen from '../src/components/screens/OrdonnancesScreen.vue'
+import OrdonnancesScreen from '../../../src/components/screens/OrdonnancesScreen.vue'
 import { screens } from '../../../src/constants/medapp.js'
+import { useAuthStore } from '../../../src/stores/authStore.js'
 
 import { ref, reactive } from 'vue'
 
@@ -21,7 +22,19 @@ const {
 // We create an actual ref to ensure Vue unwraps it correctly in the template
 const authUserRef = ref(mockAuthUser)
 
-vi.mock('../src/composables/useMedAppState.js', () => ({
+vi.mock('../../../src/services/api.js', () => ({
+  default: {
+    post: vi.fn().mockResolvedValue({ data: {} }),
+    interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } }
+  },
+  setAccessToken: vi.fn(),
+  clearAccessToken: vi.fn(),
+  getAccessToken: vi.fn(() => null),
+  ROLE_MAP: { medecin: 'MEDECIN', secretaire: 'SECRETAIRE', admin: 'ADMIN' },
+  ROLE_MAP_REVERSE: { MEDECIN: 'medecin', SECRETAIRE: 'secretaire', ADMIN: 'admin' }
+}))
+
+vi.mock('../../../src/composables/useMedAppState.js', () => ({
   useMedAppState: () => ({
     authUser: authUserRef,
     openNewOrdonnance: mockOpenNewOrdonnance,
@@ -47,7 +60,7 @@ const mockPatientStore = reactive({
   patients: [samplePatient],
   fetchPatients: vi.fn().mockResolvedValue()
 })
-vi.mock('../src/stores/patientStore.js', () => ({
+vi.mock('../../../src/stores/patientStore.js', () => ({
   usePatientStore: () => mockPatientStore
 }))
 
@@ -59,14 +72,16 @@ const mockOrdonnanceStore = reactive({
   archiveOrdonnance: vi.fn().mockResolvedValue(),
   downloadPdf: vi.fn().mockResolvedValue()
 })
-vi.mock('../src/stores/ordonnanceStore.js', () => ({
+vi.mock('../../../src/stores/ordonnanceStore.js', () => ({
   useOrdonnanceStore: () => mockOrdonnanceStore
 }))
+
+let pinia
 
 const createWrapper = () =>
   mount(OrdonnancesScreen, {
     global: {
-      plugins: [createPinia()],
+      plugins: [pinia],
       stubs: {
         'v-motion': { template: '<div><slot /></div>' },
         Teleport: true,
@@ -78,7 +93,11 @@ const createWrapper = () =>
 
 describe('OrdonnancesScreen.vue', () => {
   beforeEach(() => {
-    setActivePinia(createPinia())
+    pinia = createPinia()
+    setActivePinia(pinia)
+    const authStore = useAuthStore()
+    authStore.role = 'medecin'
+    authStore.user = { email: 'medecin@medapp.com' }
     authUserRef.value = { role: 'medecin', email: 'medecin@medapp.com' }
     mockOpenNewOrdonnance.mockClear()
     mockOpenEditOrdonnance.mockClear()

@@ -1,6 +1,6 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import AgendaScreen from '../src/components/screens/AgendaScreen.vue'
+import AgendaScreen from '../../../src/components/screens/AgendaScreen.vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { reactive } from 'vue'
 
@@ -24,7 +24,7 @@ const mockRendezVousStore = reactive({
   loading: false,
   fetchRendezVous: vi.fn().mockResolvedValue()
 })
-vi.mock('../src/stores/rendezVousStore.js', () => ({
+vi.mock('../../../src/stores/rendezVousStore.js', () => ({
   useRendezVousStore: () => mockRendezVousStore
 }))
 
@@ -34,7 +34,7 @@ const mockPatientStore = reactive({
   ],
   fetchPatients: vi.fn().mockResolvedValue()
 })
-vi.mock('../src/stores/patientStore.js', () => ({
+vi.mock('../../../src/stores/patientStore.js', () => ({
   usePatientStore: () => mockPatientStore
 }))
 

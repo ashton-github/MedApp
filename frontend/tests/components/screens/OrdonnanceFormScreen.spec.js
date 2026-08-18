@@ -1,32 +1,51 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import OrdonnanceFormScreen from '../src/components/screens/OrdonnanceFormScreen.vue'
+import OrdonnanceFormScreen from '../../../src/components/screens/OrdonnanceFormScreen.vue'
 import { screens } from '../../../src/constants/medapp.js'
+import { useAuthStore } from '../../../src/stores/authStore.js'
 
-import { ref } from 'vue'
-
-const {
-  mockShowScreen,
-  mockAuthUser,
-  mockSelectedPatientId,
-  mockOrdonnanceToEdit
-} = vi.hoisted(() => ({
-  mockShowScreen: vi.fn(),
-  mockAuthUser: { email: 'medecin@medapp.com', role: 'medecin' },
-  mockSelectedPatientId: { value: null },
-  mockOrdonnanceToEdit: { value: null }
+// The component now derives edit-mode/patient id from the route itself
+// (/ordonnances/:id/modifier, /ordonnances/nouvelle?patientId=...) rather
+// than from data held in memory. We control the route via a mutable object.
+const { mockRoute, mockPush, mockShowScreen } = vi.hoisted(() => ({
+  mockRoute: { name: 'ordonnance-new', params: {}, query: {} },
+  mockPush: vi.fn(),
+  mockShowScreen: vi.fn()
 }))
 
-const authUserRef = ref(mockAuthUser)
+vi.mock('vue-router', () => ({
+  useRoute: () => mockRoute
+}))
 
-vi.mock('../src/composables/useMedAppState.js', () => ({
+vi.mock('../../../src/router/index.js', () => ({
+  router: { push: mockPush }
+}))
+
+vi.mock('../../../src/composables/useMedAppState.js', () => ({
   useMedAppState: () => ({
     showScreen: mockShowScreen,
-    authUser: authUserRef,
-    selectedPatientId: mockSelectedPatientId,
-    ordonnanceToEdit: mockOrdonnanceToEdit
+    selectedPatientId: {
+      get value() {
+        if (mockRoute.name === 'ordonnance-new' && mockRoute.query.patientId) {
+          return mockRoute.query.patientId
+        }
+        return null
+      }
+    }
   })
+}))
+
+vi.mock('../../../src/services/api.js', () => ({
+  default: {
+    post: vi.fn().mockResolvedValue({ data: {} }),
+    interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } }
+  },
+  setAccessToken: vi.fn(),
+  clearAccessToken: vi.fn(),
+  getAccessToken: vi.fn(() => null),
+  ROLE_MAP: { medecin: 'MEDECIN', secretaire: 'SECRETAIRE', admin: 'ADMIN' },
+  ROLE_MAP_REVERSE: { MEDECIN: 'medecin', SECRETAIRE: 'secretaire', ADMIN: 'admin' }
 }))
 
 const mockPatientStore = {
@@ -35,16 +54,26 @@ const mockPatientStore = {
   fetchPatients: vi.fn().mockResolvedValue(),
   getPatientById: vi.fn().mockResolvedValue()
 }
-vi.mock('../src/stores/patientStore.js', () => ({
+vi.mock('../../../src/stores/patientStore.js', () => ({
   usePatientStore: () => mockPatientStore
+}))
+
+const mockDoctorStore = {
+  doctors: [],
+  fetchDoctors: vi.fn().mockResolvedValue(),
+  getDoctorFullName: vi.fn(() => 'Dr. Greg House')
+}
+vi.mock('../../../src/stores/doctorStore.js', () => ({
+  useDoctorStore: () => mockDoctorStore
 }))
 
 const mockOrdonnanceStore = {
   currentOrdonnance: null,
   createOrdonnance: vi.fn().mockResolvedValue({ id: 'o-new' }),
-  updateOrdonnance: vi.fn().mockResolvedValue({ id: 'o1' })
+  updateOrdonnance: vi.fn().mockResolvedValue({ id: 'o1' }),
+  getOrdonnanceById: vi.fn().mockResolvedValue()
 }
-vi.mock('../src/stores/ordonnanceStore.js', () => ({
+vi.mock('../../../src/stores/ordonnanceStore.js', () => ({
   useOrdonnanceStore: () => mockOrdonnanceStore
 }))
 
@@ -67,10 +96,12 @@ const sampleEditOrdonnance = {
   ]
 }
 
+let pinia
+
 const createWrapper = () =>
   mount(OrdonnanceFormScreen, {
     global: {
-      plugins: [createPinia()],
+      plugins: [pinia],
       stubs: {
         'v-motion': { template: '<div><slot /></div>' },
         ChevronLeft: true, ChevronRight: true, CheckCircle2: true, Check: true,
@@ -82,10 +113,17 @@ const createWrapper = () =>
 
 describe('OrdonnanceFormScreen.vue', () => {
   beforeEach(() => {
-    setActivePinia(createPinia())
+    pinia = createPinia()
+    setActivePinia(pinia)
+    const authStore = useAuthStore()
+    authStore.role = 'medecin'
+    authStore.user = { email: 'medecin@medapp.com' }
+
+    mockRoute.name = 'ordonnance-new'
+    mockRoute.params = {}
+    mockRoute.query = {}
     mockShowScreen.mockClear()
-    mockSelectedPatientId.value = null
-    mockOrdonnanceToEdit.value = null
+    mockPush.mockClear()
     mockPatientStore.patients = [samplePatient]
     mockPatientStore.currentPatient = null
     mockPatientStore.fetchPatients.mockClear()
@@ -93,10 +131,12 @@ describe('OrdonnanceFormScreen.vue', () => {
     mockOrdonnanceStore.currentOrdonnance = null
     mockOrdonnanceStore.createOrdonnance.mockClear()
     mockOrdonnanceStore.updateOrdonnance.mockClear()
+    mockOrdonnanceStore.getOrdonnanceById.mockClear()
+    mockDoctorStore.fetchDoctors.mockClear()
   })
 
   it('prefills selected patient in creation mode when selectedPatientId is provided', async () => {
-    mockSelectedPatientId.value = 'p1'
+    mockRoute.query = { patientId: 'p1' }
     const wrapper = createWrapper()
     await flushPromises()
 
@@ -105,7 +145,7 @@ describe('OrdonnanceFormScreen.vue', () => {
   })
 
   it('builds a coherent preview payload from current form data', async () => {
-    mockSelectedPatientId.value = 'p1'
+    mockRoute.query = { patientId: 'p1' }
     const wrapper = createWrapper()
     await flushPromises()
 
@@ -126,10 +166,16 @@ describe('OrdonnanceFormScreen.vue', () => {
   })
 
   it('loads edit mode and submits with updateOrdonnance', async () => {
-    mockOrdonnanceToEdit.value = sampleEditOrdonnance
+    mockRoute.name = 'ordonnance-edit'
+    mockRoute.params = { id: 'o1' }
+    mockOrdonnanceStore.getOrdonnanceById.mockImplementation(async () => {
+      mockOrdonnanceStore.currentOrdonnance = sampleEditOrdonnance
+    })
+
     const wrapper = createWrapper()
     await flushPromises()
 
+    expect(mockOrdonnanceStore.getOrdonnanceById).toHaveBeenCalledWith('o1')
     expect(wrapper.text()).toContain('Modifier ordonnance')
     expect(wrapper.find('input[placeholder="ex: 1000mg"]').element.value).toBe('500mg')
 

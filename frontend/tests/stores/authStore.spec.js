@@ -3,7 +3,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '../../src/stores/authStore.js'
 
 // Mock the api module so no real HTTP calls are made
-vi.mock('../src/services/api.js', () => {
+vi.mock('../../src/services/api.js', () => {
   const mockApi = {
     post: vi.fn(),
     interceptors: {
@@ -22,7 +22,7 @@ vi.mock('../src/services/api.js', () => {
 })
 
 // Mock the composable used for navigation
-vi.mock('../src/composables/useMedAppState.js', () => ({
+vi.mock('../../src/composables/useMedAppState.js', () => ({
   useMedAppState: () => ({
     signIn: vi.fn(),
     showScreen: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock('../src/composables/useMedAppState.js', () => ({
 }))
 
 // Mock constants
-vi.mock('../src/constants/medapp.js', () => ({
+vi.mock('../../src/constants/medapp.js', () => ({
   screens: { login: 'login', dashboard: 'dashboard' }
 }))
 

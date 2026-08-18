@@ -1,30 +1,53 @@
-import { mount } from '@vue/test-utils'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import PatientFormScreen from '../src/components/screens/PatientFormScreen.vue'
+import { reactive } from 'vue'
+import PatientFormScreen from '../../../src/components/screens/PatientFormScreen.vue'
 
 // ── Mocks ──────────────────────────────────────────────────────────────────────
-const { mockShowScreen, mockPatientToEdit } = vi.hoisted(() => ({
-  mockShowScreen:   vi.fn(),
-  mockPatientToEdit: { value: null }
+// The component now derives edit-mode/patient id from the route itself
+// (/patients/:id/modifier) rather than from data held in memory. We control
+// the route seen by the component via a mutable mock object.
+const { mockRoute, mockPush, mockShowScreen } = vi.hoisted(() => ({
+  mockRoute: { name: 'patient-new', params: {}, query: {} },
+  mockPush: vi.fn(),
+  mockShowScreen: vi.fn()
 }))
 
-vi.mock('../src/composables/useMedAppState.js', () => ({
+vi.mock('vue-router', () => ({
+  useRoute: () => mockRoute
+}))
+
+vi.mock('../../../src/router/index.js', () => ({
+  router: { push: mockPush }
+}))
+
+vi.mock('../../../src/composables/useMedAppState.js', () => ({
   useMedAppState: () => ({
-    showScreen:     mockShowScreen,
-    patientToEdit:  mockPatientToEdit
+    showScreen: mockShowScreen
   })
 }))
 
 const mockPatientStore = {
-  loading:       false,
-  error:         null,
+  loading: false,
+  error: null,
+  currentPatient: null,
   createPatient: vi.fn(),
-  updatePatient: vi.fn()
+  updatePatient: vi.fn(),
+  getPatientById: vi.fn()
 }
 
-vi.mock('../src/stores/patientStore.js', () => ({
+vi.mock('../../../src/stores/patientStore.js', () => ({
   usePatientStore: () => mockPatientStore
+}))
+
+const mockDoctorStore = {
+  doctors: [],
+  fetchDoctors: vi.fn().mockResolvedValue()
+}
+
+vi.mock('../../../src/stores/doctorStore.js', () => ({
+  useDoctorStore: () => mockDoctorStore
 }))
 
 // ── Helper ─────────────────────────────────────────────────────────────────────
@@ -45,12 +68,17 @@ const createWrapper = () =>
 describe('PatientFormScreen.vue', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    mockPatientToEdit.value           = null
-    mockPatientStore.loading          = false
-    mockPatientStore.error            = null
+    mockRoute.name = 'patient-new'
+    mockRoute.params = {}
+    mockPatientStore.loading = false
+    mockPatientStore.error = null
+    mockPatientStore.currentPatient = null
     mockPatientStore.createPatient.mockClear()
     mockPatientStore.updatePatient.mockClear()
+    mockPatientStore.getPatientById.mockClear()
+    mockDoctorStore.fetchDoctors.mockClear()
     mockShowScreen.mockClear()
+    mockPush.mockClear()
     vi.useFakeTimers()
   })
 
@@ -65,15 +93,23 @@ describe('PatientFormScreen.vue', () => {
     expect(wrapper.find('input[placeholder="Sophie"]').exists()).toBe(true)
   })
 
-  it('renders in edit mode and pre-fills form from patientToEdit', () => {
-    mockPatientToEdit.value = {
-      id: 'p1', firstName: 'Marc', lastName: 'Dubois',
-      birthDate: '1972-11-22', gender: 'M',
-      phone: '+33 6 98 76 54 32', address: null,
-      socialSecurityNumber: '1721167098023',
-      referringDoctor: 'Dr. Bernard', medicalHistory: ['Asthme']
-    }
+  it('renders in edit mode and pre-fills form from the fetched patient', async () => {
+    mockRoute.name = 'patient-edit'
+    mockRoute.params = { id: 'p1' }
+    mockPatientStore.getPatientById.mockImplementation(async (id) => {
+      mockPatientStore.currentPatient = {
+        id: 'p1', firstName: 'Marc', lastName: 'Dubois',
+        birthDate: '1972-11-22', gender: 'M',
+        phone: '+33 6 98 76 54 32', address: null,
+        socialSecurityNumber: '1721167098023',
+        referringDoctor: 'doc1', medicalHistory: ['Asthme']
+      }
+    })
+
     const wrapper = createWrapper()
+    await flushPromises()
+
+    expect(mockPatientStore.getPatientById).toHaveBeenCalledWith('p1')
     expect(wrapper.text()).toContain('Modifier le patient')
     const firstNameInput = wrapper.find('input[placeholder="Sophie"]')
     expect(firstNameInput.element.value).toBe('Marc')
@@ -105,14 +141,21 @@ describe('PatientFormScreen.vue', () => {
   })
 
   it('calls updatePatient on submit in edit mode', async () => {
-    mockPatientToEdit.value = {
-      id: 'p1', firstName: 'Marc', lastName: 'Dubois',
-      birthDate: '1972-11-22', gender: 'M',
-      phone: '', address: '', socialSecurityNumber: '1721167098023',
-      referringDoctor: '', medicalHistory: []
-    }
+    mockRoute.name = 'patient-edit'
+    mockRoute.params = { id: 'p1' }
+    mockPatientStore.getPatientById.mockImplementation(async () => {
+      mockPatientStore.currentPatient = {
+        id: 'p1', firstName: 'Marc', lastName: 'Dubois',
+        birthDate: '1972-11-22', gender: 'M',
+        phone: '', address: '', socialSecurityNumber: '1721167098023',
+        referringDoctor: '', medicalHistory: []
+      }
+    })
     mockPatientStore.updatePatient.mockResolvedValue({ id: 'p1' })
+
     const wrapper = createWrapper()
+    await flushPromises()
+
     // Navigate to step 3
     await wrapper.findAll('button').find(b => b.text().includes('Suivant')).trigger('click')
     await wrapper.findAll('button').find(b => b.text().includes('Suivant')).trigger('click')

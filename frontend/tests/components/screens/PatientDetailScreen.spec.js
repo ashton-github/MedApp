@@ -1,19 +1,19 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import PatientDetailScreen from '../src/components/screens/PatientDetailScreen.vue'
+import PatientDetailScreen from '../../../src/components/screens/PatientDetailScreen.vue'
 
 // ── Mocks ──────────────────────────────────────────────────────────────────────
 const { mockShowScreen, mockEditPatient, mockSelectedPatientId } = vi.hoisted(() => ({
-  mockShowScreen:        vi.fn(),
-  mockEditPatient:       vi.fn(),
+  mockShowScreen: vi.fn(),
+  mockEditPatient: vi.fn(),
   mockSelectedPatientId: { value: 'p1' }
 }))
 
-vi.mock('../src/composables/useMedAppState.js', () => ({
+vi.mock('../../../src/composables/useMedAppState.js', () => ({
   useMedAppState: () => ({
-    showScreen:        mockShowScreen,
-    editPatient:       mockEditPatient,
+    showScreen: mockShowScreen,
+    editPatient: mockEditPatient,
     selectedPatientId: mockSelectedPatientId
   })
 }))
@@ -22,32 +22,45 @@ const SAMPLE_PATIENT = {
   id: 'p1', firstName: 'Sophie', lastName: 'Laurent',
   birthDate: '1985-03-15', gender: 'F',
   phone: '+33 6 12 34 56 78', address: '10 rue de la Paix, Paris',
-  socialSecurityNumber: '1850375075089', referringDoctor: 'Dr. Martin',
+  socialSecurityNumber: '1850375075089', referringDoctor: 'doc1',
   medicalHistory: ['Pénicilline']
 }
 
 const mockPatientStore = {
-  loading:         false,
-  error:           null,
-  currentPatient:  null,
-  getPatientById:  vi.fn(),
-  deletePatient:   vi.fn()
+  loading: false,
+  error: null,
+  currentPatient: null,
+  getPatientById: vi.fn(),
+  deletePatient: vi.fn()
 }
 
-vi.mock('../src/stores/patientStore.js', () => ({
+vi.mock('../../../src/stores/patientStore.js', () => ({
   usePatientStore: () => mockPatientStore
 }))
 
 const mockOrdonnanceStore = {
   fetchOrdonnancesByPatientId: vi.fn().mockResolvedValue([])
 }
-vi.mock('../src/stores/ordonnanceStore.js', () => ({
+vi.mock('../../../src/stores/ordonnanceStore.js', () => ({
   useOrdonnanceStore: () => mockOrdonnanceStore
+}))
+
+const mockDoctorStore = {
+  doctors: [{ id: 'doc1', prenom: 'Jean', nom: 'Martin' }],
+  fetchDoctors: vi.fn().mockResolvedValue(),
+  getDoctorFullName: vi.fn((id) => {
+    if (!id) return 'Non renseigné'
+    const doc = mockDoctorStore.doctors.find((d) => d.id === id)
+    return doc ? `Dr. ${doc.prenom} ${doc.nom}` : 'Non renseigné'
+  })
+}
+vi.mock('../../../src/stores/doctorStore.js', () => ({
+  useDoctorStore: () => mockDoctorStore
 }))
 
 // authStore controls role-based visibility
 const mockAuthStore = { role: 'medecin' }
-vi.mock('../src/stores/authStore.js', () => ({
+vi.mock('../../../src/stores/authStore.js', () => ({
   useAuthStore: () => mockAuthStore
 }))
 
@@ -70,15 +83,15 @@ const createWrapper = () =>
 describe('PatientDetailScreen.vue', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    mockAuthStore.role             = 'medecin'
-    mockPatientStore.loading       = false
-    mockPatientStore.error         = null
+    mockAuthStore.role = 'medecin'
+    mockPatientStore.loading = false
+    mockPatientStore.error = null
     mockPatientStore.currentPatient = null
     mockPatientStore.getPatientById.mockClear()
     mockPatientStore.deletePatient.mockClear()
     mockShowScreen.mockClear()
     mockEditPatient.mockClear()
-    mockSelectedPatientId.value    = 'p1'
+    mockSelectedPatientId.value = 'p1'
   })
 
   it('calls getPatientById on mount with the selectedPatientId', async () => {
@@ -105,7 +118,7 @@ describe('PatientDetailScreen.vue', () => {
     const wrapper = createWrapper()
     expect(wrapper.text()).toContain('Sophie')
     expect(wrapper.text()).toContain('Laurent')
-    expect(wrapper.text()).toContain('Dr. Martin')
+    expect(wrapper.text()).toContain('Dr. Jean Martin')
   })
 
   it('renders tabs and switches to Ordonnances tab', async () => {

@@ -1,17 +1,17 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import RegisterView from '../src/components/screens/RegisterView.vue'
+import RegisterView from '../../../src/components/screens/RegisterView.vue'
 
 // Mock authStore so tests do not make real HTTP calls
-vi.mock('../src/stores/authStore.js', () => ({
+vi.mock('../../../src/stores/authStore.js', () => ({
   useAuthStore: () => ({
     register: vi.fn()
   })
 }))
 
 // Mock api.js (used transitively by authStore)
-vi.mock('../src/services/api.js', () => ({
+vi.mock('../../../src/services/api.js', () => ({
   default: {},
   setAccessToken: vi.fn(),
   clearAccessToken: vi.fn(),

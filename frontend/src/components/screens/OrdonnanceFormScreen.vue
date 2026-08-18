@@ -14,6 +14,8 @@ import {
   Eye,
   FileCheck
 } from 'lucide-vue-next'
+import { useRoute } from 'vue-router'
+import { router } from '../../router/index.js'
 import { useMedAppState } from '../../composables/useMedAppState.js'
 import { usePatientStore } from '../../stores/patientStore.js'
 import { useDoctorStore } from '../../stores/doctorStore.js'
@@ -22,12 +24,19 @@ import { useAuthStore } from '../../stores/authStore.js'
 import { screens } from '../../constants/medapp.js'
 import { cn } from '../../lib/utils.js'
 
+const route = useRoute()
 const { showScreen } = useMedAppState()
 const authStore = useAuthStore()
 const patientStore = usePatientStore()
 const doctorStore = useDoctorStore()
 const ordonnanceStore = useOrdonnanceStore()
-const { selectedPatientId, ordonnanceToEdit } = useMedAppState()
+const { selectedPatientId } = useMedAppState()
+
+// Edit mode is driven by the route (/ordonnances/:id/modifier), not by data
+// held in memory — the id and the loaded ordonnance survive a page reload.
+const isEditMode = computed(() => route.name === 'ordonnance-edit')
+const ordonnanceId = computed(() => route.params.id || null)
+const editedOrdonnance = ref(null) // populated by getOrdonnanceById in edit mode
 
 const pq = ref('')
 const sel = ref(null)
@@ -38,7 +47,6 @@ const submitting = ref(false)
 const done = ref(false)
 const submitError = ref(null)
 
-const isEditMode = computed(() => Boolean(ordonnanceToEdit.value?.id))
 
 const d = new Date()
 d.setMonth(d.getMonth() + 1)
@@ -46,7 +54,6 @@ const validityDate = ref(d.toISOString().split('T')[0])
 const prescriptionDate = ref(new Date().toISOString().split('T')[0])
 
 const goBackToList = () => {
-  ordonnanceToEdit.value = null
   showScreen(screens.ordonnances)
 }
 
@@ -56,7 +63,7 @@ const getReferringDoctorName = () => {
 
 const openPreview = () => {
   ordonnanceStore.currentOrdonnance = {
-    id: ordonnanceToEdit.value?.id || 'brouillon',
+    id: editedOrdonnance.value?.id || 'brouillon',
     patientId: sel.value?.id || '',
     issueDate: prescriptionDate.value,
     validityDate: validityDate.value,
@@ -79,8 +86,12 @@ onMounted(async () => {
     await patientStore.fetchPatients()
   }
 
-  if (isEditMode.value) {
-    const current = ordonnanceToEdit.value
+  if (route.name === 'ordonnance-edit' && ordonnanceId.value) {
+    await ordonnanceStore.getOrdonnanceById(ordonnanceId.value)
+    const current = ordonnanceStore.currentOrdonnance
+    editedOrdonnance.value = current
+    if (!current) return
+
     sel.value = patientStore.patients.find(p => p.id === current.patientId) || null
     if (!sel.value) {
       await patientStore.getPatientById(current.patientId)
@@ -139,7 +150,7 @@ const submit = async () => {
     }
 
     if (isEditMode.value) {
-      await ordonnanceStore.updateOrdonnance(ordonnanceToEdit.value.id, payload)
+      await ordonnanceStore.updateOrdonnance(editedOrdonnance.value.id, payload)
     } else {
       await ordonnanceStore.createOrdonnance(payload)
     }

@@ -1,40 +1,40 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import PatientsScreen from '../src/components/screens/PatientsScreen.vue'
+import PatientsScreen from '../../../src/components/screens/PatientsScreen.vue'
 
 // ── Mocks ──────────────────────────────────────────────────────────────────────
 const { mockOpenNewPatient, mockEditPatient, mockViewPatient } = vi.hoisted(() => ({
   mockOpenNewPatient: vi.fn(),
-  mockEditPatient:    vi.fn(),
-  mockViewPatient:    vi.fn()
+  mockEditPatient: vi.fn(),
+  mockViewPatient: vi.fn()
 }))
 
-vi.mock('../src/composables/useMedAppState.js', () => ({
+vi.mock('../../../src/composables/useMedAppState.js', () => ({
   useMedAppState: () => ({
     openNewPatient: mockOpenNewPatient,
-    editPatient:    mockEditPatient,
-    viewPatient:    mockViewPatient
+    editPatient: mockEditPatient,
+    viewPatient: mockViewPatient
   })
 }))
 
 // Mock patientStore
 const mockPatientStore = {
-  patients:    [],
-  loading:     false,
-  error:       null,
-  totalItems:  0,
-  fetchPatients:   vi.fn(),
-  searchPatients:  vi.fn(),
-  deletePatient:   vi.fn()
+  patients: [],
+  loading: false,
+  error: null,
+  totalItems: 0,
+  fetchPatients: vi.fn(),
+  searchPatients: vi.fn(),
+  deletePatient: vi.fn()
 }
 
-vi.mock('../src/stores/patientStore.js', () => ({
+vi.mock('../../../src/stores/patientStore.js', () => ({
   usePatientStore: () => mockPatientStore
 }))
 
 const mockAuthStore = { role: 'medecin' }
-vi.mock('../src/stores/authStore.js', () => ({
+vi.mock('../../../src/stores/authStore.js', () => ({
   useAuthStore: () => mockAuthStore
 }))
 
@@ -74,10 +74,10 @@ const createWrapper = () =>
 describe('PatientsScreen.vue', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    mockAuthStore.role          = 'medecin'
-    mockPatientStore.patients   = []
-    mockPatientStore.loading    = false
-    mockPatientStore.error      = null
+    mockAuthStore.role = 'medecin'
+    mockPatientStore.patients = []
+    mockPatientStore.loading = false
+    mockPatientStore.error = null
     mockPatientStore.totalItems = 0
     mockPatientStore.fetchPatients.mockClear()
     mockPatientStore.searchPatients.mockClear()
