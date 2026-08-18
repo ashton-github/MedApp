@@ -244,7 +244,7 @@ const avatarColor = (name = '') => AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AV
             <template v-else>
               <div
                 v-for="(a, ai) in getAppts(d)"
-                :key="a.id"
+                :key="'grid-' + a.id"
                 v-motion
                 :initial="{ opacity: 0, y: 6 }"
                 :enter="{ opacity: 1, y: 0, transition: { delay: ai * 60 } }"
@@ -277,7 +277,7 @@ const avatarColor = (name = '') => AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AV
         <div v-if="APPOINTMENTS.length === 0" class="text-center py-6 text-muted-foreground text-sm">Aucun rendez-vous trouvé</div>
         <div
           v-for="(a, i) in APPOINTMENTS"
-          :key="a.id"
+          :key="'list-' + a.id"
           v-motion
           :initial="{ opacity: 0, x: -8 }"
           :enter="{ opacity: 1, x: 0, transition: { delay: i * 30 } }"
@@ -414,4 +414,3 @@ const avatarColor = (name = '') => AVATAR_COLORS[(name?.charCodeAt(0) ?? 0) % AV
   </div>
 
 </template>
-
