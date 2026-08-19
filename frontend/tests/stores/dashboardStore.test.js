@@ -120,8 +120,14 @@ vi.mock('../../src/services/api.js', () => ({
             }
 
             if (url === '/ordonnances') {
+                throw new Error(`Unexpected GET ${url} — this endpoint does not exist on the real backend (see OrdonnanceController: only /ordonnances/{id}, /ordonnances/patient/{id} and /ordonnances/{id}/pdf are exposed)`)
+            }
+
+            const patientOrdonnancesMatch = url.match(/^\/ordonnances\/patient\/(.+)$/)
+            if (patientOrdonnancesMatch) {
+                const patientId = patientOrdonnancesMatch[1]
                 return {
-                    data: apiMocks.ordonnances
+                    data: apiMocks.ordonnances.filter(o => o.patientId === patientId)
                 }
             }
 

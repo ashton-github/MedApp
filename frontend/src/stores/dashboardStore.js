@@ -305,20 +305,35 @@ export const useDashboardStore = defineStore('dashboard', () => {
         loading.value = true
         error.value = null
 
-        try {
-            // size=1000 prevents the first-page limitation from hiding today's patients.
-            // Sorting/filtering is still performed entirely in the frontend.
-            await Promise.all([
-                patientStore.fetchPatients({ page: 0, size: 1000 }),
-                rendezVousStore.fetchRendezVous(),
-                ordonnanceStore.fetchOrdonnances(),
-                doctorStore.fetchDoctors()
-            ])
-        } catch (err) {
-            error.value = err?.response?.data?.message ?? err?.message ?? 'Impossible de charger le tableau de bord.'
-        } finally {
-            loading.value = false
+        // Patients must be loaded before we can fetch ordonnances (see below), so
+        // this one goes first instead of joining the Promise.all with the others.
+        const patientsResult = await patientStore.fetchPatients({ page: 0, size: 1000 }).catch(err => err)
+
+        // NOTE: there is no GET /ordonnances (list-all) endpoint on the backend —
+        // aggregate every patient's ordonnances via the real /ordonnances/patient/{id} endpoint.
+        const fetchAllOrdonnances = async () => {
+            const items = await Promise.all(
+                patientStore.patients.map(p => ordonnanceStore.fetchOrdonnancesByPatientId(p.id))
+            )
+            ordonnanceStore.ordonnances = items.flat()
         }
+
+        // Promise.all rejects as soon as the FIRST promise rejects, without waiting
+        // for the others still in flight. rendezVousStore.fetchRendezVous() is the
+        // only one of these actions that rethrows on error.
+
+        const results = await Promise.all([
+            rendezVousStore.fetchRendezVous().catch(err => err),
+            fetchAllOrdonnances().catch(err => err),
+            doctorStore.fetchDoctors().catch(err => err)
+        ])
+
+        const firstError = [patientsResult, ...results].find(r => r instanceof Error)
+        error.value = firstError
+            ? (firstError?.response?.data?.message ?? firstError?.message ?? 'Impossible de charger le tableau de bord.')
+            : null
+
+        loading.value = false
     }
 
     return {
