@@ -38,7 +38,7 @@ const _clearPersistedUser = () => {
 export const useAuthStore = defineStore('auth', () => {
   // ─── State ────────────────────────────────────────────────────────────────
   const user = ref(_loadPersistedUser())  // { email } — restored from sessionStorage on page load
-  const role = ref(null)                  // 'medecin' | 'secretaire' | 'admin' (frontend label)
+  const role = ref(null)                  // 'medecin' | 'secretaire' (frontend label)
   const isAuthenticated = ref(false)
   const isInitializing = ref(true)        // true while restoreSession is running
 
@@ -84,7 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password })
-    // data = { accessToken: string, role: 'MEDECIN' | 'SECRETAIRE' | 'ADMIN' }
+    // data = { accessToken: string, role: 'MEDECIN' | 'SECRETAIRE' }
     // We know the email because the user just typed it — pass it as userData.
     _setSession(data.accessToken, data.role, { email })
 

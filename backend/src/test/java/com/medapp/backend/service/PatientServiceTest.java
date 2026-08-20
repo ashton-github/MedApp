@@ -194,18 +194,14 @@ public class PatientServiceTest {
     }
 
     @Test 
-    void nePasMasquerNumeroSecuriteSociale_pourRoleMedecinOuAdmin(){
+    void nePasMasquerNumeroSecuriteSociale_pourRoleMedecin(){
        
         Patient patientPourMedecin = TestDataFactory.unPatient();
         patientPourMedecin.setNumeroSecuriteSociale("1900512123456");
-        Patient patientPourAdmin = TestDataFactory.unPatient();
-        patientPourAdmin.setNumeroSecuriteSociale("1900512123456");
        
         Patient resultMedecin = patientService.appliquerMasquageSelonRole(patientPourMedecin , Role.MEDECIN);
-        Patient resultAdmin = patientService.appliquerMasquageSelonRole(patientPourAdmin , Role.ADMIN);
 
         assertEquals("1900512123456", resultMedecin.getNumeroSecuriteSociale());
-        assertEquals("1900512123456", resultAdmin.getNumeroSecuriteSociale());
     }
     
 

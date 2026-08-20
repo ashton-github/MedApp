@@ -33,7 +33,7 @@ const pf = ref({
   lastName: authStore.user?.nom || 'Dr.',
   email: authStore.user?.email || 'dr.martin@medapp.fr',
   phone: '+33 6 12 34 56 78',
-  specialty: authStore.role === 'medecin' ? 'Médecine générale' : authStore.role === 'secretaire' ? 'Secrétariat médical' : 'Administration',
+  specialty: authStore.role === 'medecin' ? 'Médecine générale' : 'Secrétariat médical',
   rpps: authStore.role === 'medecin' ? '10004589231' : '',
 })
 

@@ -143,19 +143,19 @@ public class PatientControllerIT extends IntegrationTestBase {
     }
 
     @Test
-    void supprimerPatient_retourne204_siRoleAdmin() throws Exception {
-        String tokenAdmin = obtenirAccessToken("admin-suppr@medapp.com", Role.ADMIN);
+    void supprimerPatient_retourne204_siRoleSecretaire() throws Exception {
+        String tokenSecretaire = obtenirAccessToken("secretaire-suppr@medapp.com", Role.SECRETAIRE);
 
         PatientRequest request = TestDataFactory.unPatientRequest("1900512100005");
-        String patientId = creerPatientEtRecupererId(tokenAdmin, request);
+        String patientId = creerPatientEtRecupererId(tokenSecretaire, request);
 
         mockMvc.perform(delete("/api/patients/" + patientId)
-                        .header("Authorization", "Bearer " + tokenAdmin))
+                        .header("Authorization", "Bearer " + tokenSecretaire))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    void supprimerPatient_retourne403_siRoleNonAdmin() throws Exception {
+    void supprimerPatient_retourne403_siRoleNonSecretaire() throws Exception {
         String tokenMedecin = obtenirAccessToken("medecin-suppr-refuse@medapp.com", Role.MEDECIN);
 
         PatientRequest request = TestDataFactory.unPatientRequest("1900512100006");

@@ -142,7 +142,7 @@ describe('PatientDetailScreen.vue', () => {
   })
 
   it('shows delete confirmation modal when Supprimer is clicked', async () => {
-    mockAuthStore.role = 'admin'
+    mockAuthStore.role = 'secretaire'
     mockPatientStore.currentPatient = SAMPLE_PATIENT
     const wrapper = createWrapper()
     expect(wrapper.text()).not.toContain('Cette action est irréversible')

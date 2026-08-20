@@ -140,7 +140,7 @@ describe('PatientsScreen.vue', () => {
   })
 
   it('shows delete confirmation modal when trash icon is clicked', async () => {
-    mockAuthStore.role = 'admin'
+    mockAuthStore.role = 'secretaire'
     mockPatientStore.patients = SAMPLE_PATIENTS
     const wrapper = createWrapper()
     const deleteBtn = wrapper.find('button[title="Supprimer"]')

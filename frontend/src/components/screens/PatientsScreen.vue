@@ -22,7 +22,7 @@ import { cn } from '../../lib/utils.js'
 const { openNewPatient, editPatient, viewPatient } = useMedAppState()
 const patientStore = usePatientStore()
 const authStore = useAuthStore()
-const isAdmin = computed(() => authStore.role === 'admin')
+const isSecretaire = computed(() => authStore.role === 'secretaire')
 
 const view = ref('grid')
 const q    = ref('')
@@ -153,7 +153,7 @@ const fmt         = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day: '2
                 <button @click.stop="editPatient(p)" class="p-1 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors" title="Modifier">
                   <Pencil class="w-3.5 h-3.5" />
                 </button>
-                <button v-if="isAdmin" @click.stop="confirmDelete(p.id)" class="p-1 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors" title="Supprimer">
+                <button v-if="isSecretaire" @click.stop="confirmDelete(p.id)" class="p-1 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors" title="Supprimer">
                   <Trash2 class="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -196,7 +196,7 @@ const fmt         = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day: '2
                 <div class="flex gap-1">
                   <button @click.stop="viewPatient(p.id)" class="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"><Eye class="w-3.5 h-3.5" /></button>
                   <button @click.stop="editPatient(p)" class="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"><Pencil class="w-3.5 h-3.5" /></button>
-                  <button v-if="isAdmin" @click.stop="confirmDelete(p.id)" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors" title="Supprimer"><Trash2 class="w-3.5 h-3.5" /></button>
+                  <button v-if="isSecretaire" @click.stop="confirmDelete(p.id)" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors" title="Supprimer"><Trash2 class="w-3.5 h-3.5" /></button>
                 </div>
               </td>
             </tr>

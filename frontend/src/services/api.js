@@ -3,15 +3,13 @@ import axios from 'axios'
 // Role mapping: frontend labels → backend enum values
 export const ROLE_MAP = {
   medecin: 'MEDECIN',
-  secretaire: 'SECRETAIRE',
-  admin: 'ADMIN'
+  secretaire: 'SECRETAIRE'
 }
 
 // Reverse mapping: backend enum values → frontend labels
 export const ROLE_MAP_REVERSE = {
   MEDECIN: 'medecin',
-  SECRETAIRE: 'secretaire',
-  ADMIN: 'admin'
+  SECRETAIRE: 'secretaire'
 }
 
 // In-memory token storage (never localStorage)

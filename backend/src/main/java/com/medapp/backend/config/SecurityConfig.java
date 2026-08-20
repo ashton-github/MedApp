@@ -21,7 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * >>> A REMPLACER lors de la Semaine 2 (Authentification sécurisée) <<<
  * par une configuration basée sur des tokens JWT :
  *   - filtre JwtAuthenticationFilter
- *   - règles d'autorisation par rôle (MEDECIN, SECRETAIRE, ADMIN)
+ *   - règles d'autorisation par rôle (MEDECIN, SECRETAIRE)
  *   - endpoints /api/auth/** publics, le reste protégé
  *
  * Le PasswordEncoder (BCrypt) est déjà exposé ici car il sera nécessaire

@@ -76,10 +76,6 @@ describe('ROLE_MAP', () => {
   it('maps frontend "secretaire" → backend "SECRETAIRE"', () => {
     expect(ROLE_MAP.secretaire).toBe('SECRETAIRE')
   })
-
-  it('maps frontend "admin" → backend "ADMIN"', () => {
-    expect(ROLE_MAP.admin).toBe('ADMIN')
-  })
 })
 
 describe('ROLE_MAP_REVERSE', () => {
@@ -89,10 +85,6 @@ describe('ROLE_MAP_REVERSE', () => {
 
   it('maps backend "SECRETAIRE" → frontend "secretaire"', () => {
     expect(ROLE_MAP_REVERSE.SECRETAIRE).toBe('secretaire')
-  })
-
-  it('maps backend "ADMIN" → frontend "admin"', () => {
-    expect(ROLE_MAP_REVERSE.ADMIN).toBe('admin')
   })
 
   it('ROLE_MAP and ROLE_MAP_REVERSE are exact inverses of each other', () => {

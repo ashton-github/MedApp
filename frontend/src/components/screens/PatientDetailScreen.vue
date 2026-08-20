@@ -29,7 +29,7 @@ const doctorStore = useDoctorStore()
 const ordonnanceStore = useOrdonnanceStore()
 const authStore = useAuthStore()
 const isDoc = computed(() => authStore.role === 'medecin')
-const isAdmin = computed(() => authStore.role === 'admin')
+const isSecretaire = computed(() => authStore.role === 'secretaire')
 const tab   = ref('overview')
 const patientOrdonnances = ref([])
 
@@ -121,7 +121,7 @@ onMounted(async () => {
               <button v-if="isDoc" @click="openNewOrdonnance(patientStore.currentPatient.id)" class="bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring px-3 py-1.5 text-sm gap-1.5">
                 <Plus class="w-4 h-4" /> Ordonnance
               </button>
-              <button v-if="isAdmin" class="border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-500 dark:hover:bg-red-950/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 px-3 py-1.5 text-sm gap-1.5" @click="confirmDelete">
+              <button v-if="isSecretaire" class="border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-500 dark:hover:bg-red-950/30 inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 px-3 py-1.5 text-sm gap-1.5" @click="confirmDelete">
                 <Trash2 class="w-4 h-4" /> Supprimer
               </button>
             </div>

@@ -16,8 +16,8 @@ vi.mock('../../src/services/api.js', () => {
     setAccessToken: vi.fn(),
     clearAccessToken: vi.fn(),
     getAccessToken: vi.fn(() => null),
-    ROLE_MAP: { medecin: 'MEDECIN', secretaire: 'SECRETAIRE', admin: 'ADMIN' },
-    ROLE_MAP_REVERSE: { MEDECIN: 'medecin', SECRETAIRE: 'secretaire', ADMIN: 'admin' }
+    ROLE_MAP: { medecin: 'MEDECIN', secretaire: 'SECRETAIRE' },
+    ROLE_MAP_REVERSE: { MEDECIN: 'medecin', SECRETAIRE: 'secretaire' }
   }
 })
 
@@ -142,9 +142,9 @@ describe('authStore', () => {
   describe('logout()', () => {
     it('clears session after logout', async () => {
       // First login
-      api.post.mockResolvedValueOnce({ data: { accessToken: 'tok', role: 'ADMIN' } })
+      api.post.mockResolvedValueOnce({ data: { accessToken: 'tok', role: 'SECRETAIRE' } })
       const store = useAuthStore()
-      await store.login('admin@test.fr', 'Motdepasse1')
+      await store.login('secretaire@test.fr', 'Motdepasse1')
       expect(store.isAuthenticated).toBe(true)
 
       // Then logout
@@ -195,11 +195,11 @@ describe('authStore', () => {
 
   describe('hasRole getter', () => {
     it('returns true for the correct role', async () => {
-      api.post.mockResolvedValueOnce({ data: { accessToken: 'tok', role: 'ADMIN' } })
+      api.post.mockResolvedValueOnce({ data: { accessToken: 'tok', role: 'SECRETAIRE' } })
       const store = useAuthStore()
-      await store.login('admin@test.fr', 'Motdepasse1')
+      await store.login('secretaire@test.fr', 'Motdepasse1')
 
-      expect(store.hasRole('admin')).toBe(true)
+      expect(store.hasRole('secretaire')).toBe(true)
       expect(store.hasRole('medecin')).toBe(false)
     })
   })

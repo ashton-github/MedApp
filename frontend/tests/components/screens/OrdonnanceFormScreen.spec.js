@@ -44,8 +44,8 @@ vi.mock('../../../src/services/api.js', () => ({
   setAccessToken: vi.fn(),
   clearAccessToken: vi.fn(),
   getAccessToken: vi.fn(() => null),
-  ROLE_MAP: { medecin: 'MEDECIN', secretaire: 'SECRETAIRE', admin: 'ADMIN' },
-  ROLE_MAP_REVERSE: { MEDECIN: 'medecin', SECRETAIRE: 'secretaire', ADMIN: 'admin' }
+  ROLE_MAP: { medecin: 'MEDECIN', secretaire: 'SECRETAIRE' },
+  ROLE_MAP_REVERSE: { MEDECIN: 'medecin', SECRETAIRE: 'secretaire' }
 }))
 
 const mockPatientStore = {

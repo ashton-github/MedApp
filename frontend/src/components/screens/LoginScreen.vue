@@ -8,8 +8,6 @@ import {
   Mail,
   Lock,
   ArrowRight,
-  ClipboardList,
-  Shield,
   Loader2,
   AlertCircle,
   Eye,
@@ -31,12 +29,6 @@ const success = ref(false)
 const errs = ref({})
 const serverError = ref('')
 const showPassword = ref(false)
-
-const ROLES = [
-  { v: 'medecin', label: 'Médecin', icon: Stethoscope },
-  { v: 'secretaire', label: 'Secrétaire', icon: ClipboardList },
-  { v: 'admin', label: 'Admin', icon: Shield }
-]
 
 const validate = () => {
   const e = {}

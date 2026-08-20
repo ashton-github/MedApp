@@ -49,7 +49,6 @@ const initials = computed(() => {
 const roleLabel = computed(() => {
   if (authStore.role === 'medecin') return 'Médecin'
   if (authStore.role === 'secretaire') return 'Secrétaire'
-  if (authStore.role === 'admin') return 'Administrateur'
   return 'Utilisateur'
 })
 </script>

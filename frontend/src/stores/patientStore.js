@@ -161,7 +161,7 @@ export const usePatientStore = defineStore('patient', () => {
 
   /**
    * Delete a patient.
-   * DELETE /api/patients/:id  (requires ADMIN role — backend enforced)
+   * DELETE /api/patients/:id  (requires SECRETAIRE role — backend enforced)
    * @param {string} id
    */
   const deletePatient = async (id) => {
