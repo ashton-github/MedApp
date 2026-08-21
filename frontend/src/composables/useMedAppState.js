@@ -16,7 +16,6 @@ const SCREEN_TO_ROUTE = {
   [screens.ordonnanceForm]: 'ordonnance-new',
   [screens.pdfPreview]: 'pdf-preview',
   [screens.agenda]: 'agenda',
-  [screens.accountRequests]: 'account-requests',
   [screens.settings]: 'settings'
 }
 
