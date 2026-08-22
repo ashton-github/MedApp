@@ -36,23 +36,18 @@ public class RendezVousService {
         this.rendezVousMapper = rendezVousMapper;
     }
 
-   public RendezVousResponse creerRendezVous(RendezVousRequest request, String medecinId) {
+    public RendezVousResponse creerRendezVous(RendezVousRequest request, String medecinId) {
         if (medecinId == null || medecinId.isEmpty()) {
             throw new DonneesInvalidesException("Le medecin est obligatoire pour creer un rendez-vous");
         }
-
         validerMedecin(medecinId);
 
         Patient patient = patientRepository.findById(request.getPatientId())
                 .orElseThrow(() -> new DonneesInvalidesException("Patient introuvable"));
 
-        if (request.getDate() == null || request.getHeure() == null) {
-            throw new DonneesInvalidesException("La date et l'heure sont obligatoires");
-        }
-        
-        if (request.getDate().isBefore(LocalDate.now()) || (request.getDate().isEqual(LocalDate.now()) && request.getHeure().isBefore(LocalTime.now()))) {
-            throw new DonneesInvalidesException("Impossible de créer un rendez-vous dans le passé");
-        }
+        validerDateHeure(request.getDate(), request.getHeure());
+        validerDuree(request.getDuree());
+        TypeRendezVous type = validerType(request.getType());
 
         RendezVous rendezVous = rendezVousMapper.toEntity(request, medecinId);
         rendezVous.setStatut(StatutRendezVous.PLANIFIE);
@@ -83,10 +78,23 @@ public class RendezVousService {
         RendezVous existant = rendezVousRepository.findById(id)
                 .orElseThrow(() -> new DonneesInvalidesException("Rendez-vous introuvable"));
 
-        if (request.getDate() != null) existant.setDate(request.getDate());
-        if (request.getHeure() != null) existant.setHeure(request.getHeure());
-        if (request.getDuree() > 0) existant.setDuree(request.getDuree());
-        if (request.getType() != null) existant.setType(TypeRendezVous.valueOf(request.getType()));
+        if (request.getDate() != null || request.getHeure() != null) {
+            LocalDate nouvelleDate = request.getDate() != null ? request.getDate() : existant.getDate();
+            LocalTime nouvelleHeure = request.getHeure() != null ? request.getHeure() : existant.getHeure();
+            validerDateHeure(nouvelleDate, nouvelleHeure);
+            existant.setDate(nouvelleDate);
+            existant.setHeure(nouvelleHeure);
+        }
+
+        if (request.getDuree() != 0) {
+            validerDuree(request.getDuree());
+            existant.setDuree(request.getDuree());
+        }
+
+        if (request.getType() != null) {
+            existant.setType(validerType(request.getType()));
+        }
+
         if (request.getRemarques() != null) existant.setRemarques(request.getRemarques());
 
         RendezVous saved = rendezVousRepository.save(existant);
@@ -100,12 +108,8 @@ public class RendezVousService {
     public RendezVousResponse changerStatut(String id, String statut) {
         RendezVous existant = rendezVousRepository.findById(id)
                 .orElseThrow(() -> new DonneesInvalidesException("Rendez-vous introuvable"));
-        
-        try {
-            existant.setStatut(StatutRendezVous.valueOf(statut));
-        } catch (IllegalArgumentException e) {
-            throw new DonneesInvalidesException("Statut invalide");
-        }
+
+        existant.setStatut(validerStatut(statut));
 
         RendezVous saved = rendezVousRepository.save(existant);
         String patientName = patientRepository.findById(saved.getPatientId())
@@ -127,6 +131,46 @@ public class RendezVousService {
                 .orElseThrow(() -> new DonneesInvalidesException("Le medecin specifie n'existe pas."));
         if (medecin.getRole() != Role.MEDECIN) {
             throw new DonneesInvalidesException("L'utilisateur specifie n'a pas le role MEDECIN.");
+        }
+        if (!medecin.isActif()) {
+            throw new DonneesInvalidesException("Le medecin specifie n'est pas actif.");
+        }
+    }
+
+    private void validerDateHeure(LocalDate date, LocalTime heure) {
+        if (date == null || heure == null) {
+            throw new DonneesInvalidesException("La date et l'heure sont obligatoires");
+        }
+        if (date.isBefore(LocalDate.now()) || (date.isEqual(LocalDate.now()) && heure.isBefore(LocalTime.now()))) {
+            throw new DonneesInvalidesException("Impossible de programmer un rendez-vous dans le passe");
+        }
+    }
+
+    private void validerDuree(int duree) {
+        if (duree <= 0) {
+            throw new DonneesInvalidesException("La duree doit etre superieure a zero");
+        }
+    }
+
+    private TypeRendezVous validerType(String type) {
+        if (type == null || type.isEmpty()) {
+            throw new DonneesInvalidesException("Le type de rendez-vous est obligatoire");
+        }
+        try {
+            return TypeRendezVous.valueOf(type);
+        } catch (IllegalArgumentException e) {
+            throw new DonneesInvalidesException("Type de rendez-vous invalide");
+        }
+    }
+
+    private StatutRendezVous validerStatut(String statut) {
+        if (statut == null || statut.isEmpty()) {
+            throw new DonneesInvalidesException("Le statut est obligatoire");
+        }
+        try {
+            return StatutRendezVous.valueOf(statut);
+        } catch (IllegalArgumentException e) {
+            throw new DonneesInvalidesException("Statut invalide");
         }
     }
 }

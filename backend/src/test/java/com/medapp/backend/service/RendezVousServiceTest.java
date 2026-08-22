@@ -46,6 +46,8 @@ public class RendezVousServiceTest {
     @Mock
     private UserRepository userRepository;
 
+  
+
     @InjectMocks
     private RendezVousService rendezVousService;
 
@@ -364,4 +366,81 @@ public class RendezVousServiceTest {
 
         verify(rendezVousRepository, never()).deleteById(any());
     }
+
+
+   
+
+        @Test
+        void creerRendezVous_lanceException_siMedecinInactif() {
+        RendezVousRequest req = creerRequest("patient-1", LocalDate.now().plusDays(1), LocalTime.of(9, 0));
+        User medecinInactif = new User("medecin@medapp.com", "hash", "Dupont", "Jean",
+                com.medapp.backend.model.Role.MEDECIN, false, null, null);
+        medecinInactif.setId("medecin-inactif");
+
+        when(userRepository.findById("medecin-inactif")).thenReturn(Optional.of(medecinInactif));
+
+        assertThrows(DonneesInvalidesException.class,
+                () -> rendezVousService.creerRendezVous(req, "medecin-inactif"));
+
+        verify(rendezVousRepository, never()).save(any());
+        }
+
+        @Test
+        void creerRendezVous_lanceException_siDureeNegative() {
+        Patient patient = creerPatient("patient-1");
+        User medecin = creerMedecin("medecin-1");
+        RendezVousRequest req = creerRequest("patient-1", LocalDate.now().plusDays(1), LocalTime.of(9, 0));
+        req.setDuree(-10);
+
+        when(userRepository.findById("medecin-1")).thenReturn(Optional.of(medecin));
+        when(patientRepository.findById("patient-1")).thenReturn(Optional.of(patient));
+
+        assertThrows(DonneesInvalidesException.class,
+                () -> rendezVousService.creerRendezVous(req, "medecin-1"));
+
+        verify(rendezVousRepository, never()).save(any());
+        }
+
+        @Test
+        void creerRendezVous_lanceException_siTypeInvalide() {
+        Patient patient = creerPatient("patient-1");
+        User medecin = creerMedecin("medecin-1");
+        RendezVousRequest req = creerRequest("patient-1", LocalDate.now().plusDays(1), LocalTime.of(9, 0));
+        req.setType("TYPE_INEXISTANT");
+
+        when(userRepository.findById("medecin-1")).thenReturn(Optional.of(medecin));
+        when(patientRepository.findById("patient-1")).thenReturn(Optional.of(patient));
+
+        assertThrows(DonneesInvalidesException.class,
+                () -> rendezVousService.creerRendezVous(req, "medecin-1"));
+
+        verify(rendezVousRepository, never()).save(any());
+        }
+
+        @Test
+        void modifierRendezVous_lanceException_siNouvelleDateDansLePasse() {
+        RendezVous existant = creerEntite("rv-1", "patient-1", "medecin-1",
+                LocalDate.now().plusDays(1), LocalTime.of(9, 0));
+        RendezVousRequest req = creerRequest("patient-1", LocalDate.now().minusDays(1), LocalTime.of(9, 0));
+
+        when(rendezVousRepository.findById("rv-1")).thenReturn(Optional.of(existant));
+
+        assertThrows(DonneesInvalidesException.class,
+                () -> rendezVousService.modifierRendezVous("rv-1", req));
+
+        verify(rendezVousRepository, never()).save(any());
+        }
+
+        @Test
+        void changerStatut_lanceException_siStatutNull() {
+        RendezVous existant = creerEntite("rv-1", "patient-1", "medecin-1",
+                LocalDate.now().plusDays(1), LocalTime.of(9, 0));
+
+        when(rendezVousRepository.findById("rv-1")).thenReturn(Optional.of(existant));
+
+        assertThrows(DonneesInvalidesException.class,
+                () -> rendezVousService.changerStatut("rv-1", null));
+
+        verify(rendezVousRepository, never()).save(any());
+        }
 }
