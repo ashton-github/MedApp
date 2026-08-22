@@ -29,12 +29,7 @@ public class RendezVousController {
     public ResponseEntity<RendezVousResponse> creerRendezVous(
             @RequestBody RendezVousRequest request,
             @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
-        String medecinId = request.getMedecinId();
-        // Fallback for demo purposes if medecin is not provided
-        if (medecinId == null || medecinId.isEmpty()) {
-            medecinId = "default-medecin-id";
-        }
-        return new ResponseEntity<>(rendezVousService.creerRendezVous(request, medecinId), HttpStatus.CREATED);
+        return new ResponseEntity<>(rendezVousService.creerRendezVous(request, request.getMedecinId()), HttpStatus.CREATED);
     }
 
     @GetMapping

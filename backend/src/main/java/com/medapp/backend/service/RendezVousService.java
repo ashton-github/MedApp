@@ -6,10 +6,13 @@ import com.medapp.backend.exception.DonneesInvalidesException;
 import com.medapp.backend.mapper.RendezVousMapper;
 import com.medapp.backend.model.Patient;
 import com.medapp.backend.model.RendezVous;
+import com.medapp.backend.model.Role;
 import com.medapp.backend.model.StatutRendezVous;
 import com.medapp.backend.model.TypeRendezVous;
+import com.medapp.backend.model.User;
 import com.medapp.backend.repository.PatientRepository;
 import com.medapp.backend.repository.RendezVousRepository;
+import com.medapp.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -22,15 +25,24 @@ public class RendezVousService {
 
     private final RendezVousRepository rendezVousRepository;
     private final PatientRepository patientRepository;
+    private final UserRepository userRepository;
     private final RendezVousMapper rendezVousMapper;
 
-    public RendezVousService(RendezVousRepository rendezVousRepository, PatientRepository patientRepository, RendezVousMapper rendezVousMapper) {
+    public RendezVousService(RendezVousRepository rendezVousRepository, PatientRepository patientRepository,
+                              UserRepository userRepository, RendezVousMapper rendezVousMapper) {
         this.rendezVousRepository = rendezVousRepository;
         this.patientRepository = patientRepository;
+        this.userRepository = userRepository;
         this.rendezVousMapper = rendezVousMapper;
     }
 
-    public RendezVousResponse creerRendezVous(RendezVousRequest request, String medecinId) {
+   public RendezVousResponse creerRendezVous(RendezVousRequest request, String medecinId) {
+        if (medecinId == null || medecinId.isEmpty()) {
+            throw new DonneesInvalidesException("Le medecin est obligatoire pour creer un rendez-vous");
+        }
+
+        validerMedecin(medecinId);
+
         Patient patient = patientRepository.findById(request.getPatientId())
                 .orElseThrow(() -> new DonneesInvalidesException("Patient introuvable"));
 
@@ -108,5 +120,13 @@ public class RendezVousService {
             throw new DonneesInvalidesException("Rendez-vous introuvable");
         }
         rendezVousRepository.deleteById(id);
+    }
+
+    private void validerMedecin(String medecinId) {
+        User medecin = userRepository.findById(medecinId)
+                .orElseThrow(() -> new DonneesInvalidesException("Le medecin specifie n'existe pas."));
+        if (medecin.getRole() != Role.MEDECIN) {
+            throw new DonneesInvalidesException("L'utilisateur specifie n'a pas le role MEDECIN.");
+        }
     }
 }

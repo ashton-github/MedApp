@@ -2,6 +2,7 @@ package com.medapp.backend.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
@@ -21,11 +22,14 @@ import com.medapp.backend.exception.DonneesInvalidesException;
 import com.medapp.backend.mapper.RendezVousMapper;
 import com.medapp.backend.model.Patient;
 import com.medapp.backend.model.RendezVous;
+import com.medapp.backend.model.Role;
 import com.medapp.backend.model.Sexe;
 import com.medapp.backend.model.StatutRendezVous;
 import com.medapp.backend.model.TypeRendezVous;
+import com.medapp.backend.model.User;
 import com.medapp.backend.repository.PatientRepository;
 import com.medapp.backend.repository.RendezVousRepository;
+import com.medapp.backend.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class RendezVousServiceTest {
@@ -39,6 +43,9 @@ public class RendezVousServiceTest {
     @Mock
     private RendezVousMapper rendezVousMapper;
 
+    @Mock
+    private UserRepository userRepository;
+
     @InjectMocks
     private RendezVousService rendezVousService;
 
@@ -50,6 +57,12 @@ public class RendezVousServiceTest {
                 List.of(), null, null, null);
         p.setId(id);
         return p;
+    }
+
+    private User creerMedecin(String id) {
+        User medecin = new User("medecin@medapp.com", "hash", "Dupont", "Jean", Role.MEDECIN, true, null, null);
+        medecin.setId(id);
+        return medecin;
     }
 
     private RendezVousRequest creerRequest(String patientId, LocalDate date, LocalTime heure) {
@@ -74,6 +87,7 @@ public class RendezVousServiceTest {
     @Test
     void creerRendezVous_reussit_siPatientExisteEtDateFuture() {
         Patient patient = creerPatient("patient-1");
+        User medecin = creerMedecin("medecin-1");
         RendezVousRequest req = creerRequest("patient-1",
                 LocalDate.now().plusDays(1), LocalTime.of(9, 0));
 
@@ -83,6 +97,7 @@ public class RendezVousServiceTest {
         expected.setId("rv-1");
         expected.setStatut("PLANIFIE");
 
+        when(userRepository.findById("medecin-1")).thenReturn(Optional.of(medecin));
         when(patientRepository.findById("patient-1")).thenReturn(Optional.of(patient));
         when(rendezVousMapper.toEntity(req, "medecin-1")).thenReturn(entite);
         when(rendezVousRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -101,6 +116,9 @@ public class RendezVousServiceTest {
         RendezVousRequest req = creerRequest("patient-inexistant",
                 LocalDate.now().plusDays(1), LocalTime.of(9, 0));
 
+        // le médecin doit exister pour que le test échoue bien sur le patient,
+        // pas sur la validation du médecin (validerMedecin passe avant)
+        when(userRepository.findById("medecin-1")).thenReturn(Optional.of(creerMedecin("medecin-1")));
         when(patientRepository.findById("patient-inexistant")).thenReturn(Optional.empty());
 
         assertThrows(DonneesInvalidesException.class,
@@ -114,6 +132,7 @@ public class RendezVousServiceTest {
         Patient patient = creerPatient("patient-1");
         RendezVousRequest req = creerRequest("patient-1", null, LocalTime.of(9, 0));
 
+        when(userRepository.findById("medecin-1")).thenReturn(Optional.of(creerMedecin("medecin-1")));
         when(patientRepository.findById("patient-1")).thenReturn(Optional.of(patient));
 
         assertThrows(DonneesInvalidesException.class,
@@ -127,6 +146,7 @@ public class RendezVousServiceTest {
         Patient patient = creerPatient("patient-1");
         RendezVousRequest req = creerRequest("patient-1", LocalDate.now().plusDays(1), null);
 
+        when(userRepository.findById("medecin-1")).thenReturn(Optional.of(creerMedecin("medecin-1")));
         when(patientRepository.findById("patient-1")).thenReturn(Optional.of(patient));
 
         assertThrows(DonneesInvalidesException.class,
@@ -141,10 +161,63 @@ public class RendezVousServiceTest {
         RendezVousRequest req = creerRequest("patient-1",
                 LocalDate.now().minusDays(1), LocalTime.of(9, 0));
 
+        when(userRepository.findById("medecin-1")).thenReturn(Optional.of(creerMedecin("medecin-1")));
         when(patientRepository.findById("patient-1")).thenReturn(Optional.of(patient));
 
         assertThrows(DonneesInvalidesException.class,
                 () -> rendezVousService.creerRendezVous(req, "medecin-1"));
+
+        verify(rendezVousRepository, never()).save(any());
+    }
+
+    @Test
+    void creerRendezVous_lanceException_siMedecinIdManquant() {
+        RendezVousRequest req = creerRequest("patient-1",
+                LocalDate.now().plusDays(1), LocalTime.of(9, 0));
+
+        assertThrows(DonneesInvalidesException.class,
+                () -> rendezVousService.creerRendezVous(req, null));
+
+        verify(rendezVousRepository, never()).save(any());
+        verify(patientRepository, never()).findById(any());
+    }
+
+    @Test
+    void creerRendezVous_lanceException_siMedecinIdVide() {
+        RendezVousRequest req = creerRequest("patient-1",
+                LocalDate.now().plusDays(1), LocalTime.of(9, 0));
+
+        assertThrows(DonneesInvalidesException.class,
+                () -> rendezVousService.creerRendezVous(req, ""));
+
+        verify(rendezVousRepository, never()).save(any());
+    }
+
+    @Test
+    void creerRendezVous_lanceException_siMedecinInexistant() {
+        RendezVousRequest req = creerRequest("patient-1",
+                LocalDate.now().plusDays(1), LocalTime.of(9, 0));
+
+        when(userRepository.findById("medecin-inexistant")).thenReturn(Optional.empty());
+
+        assertThrows(DonneesInvalidesException.class,
+                () -> rendezVousService.creerRendezVous(req, "medecin-inexistant"));
+
+        verify(rendezVousRepository, never()).save(any());
+    }
+
+    @Test
+    void creerRendezVous_lanceException_siUtilisateurNaPasLeRoleMedecin() {
+        RendezVousRequest req = creerRequest("patient-1",
+                LocalDate.now().plusDays(1), LocalTime.of(9, 0));
+
+        User secretaire = new User("secretaire@medapp.com", "hash", "Martin", "Julie", Role.SECRETAIRE, true, null, null);
+        secretaire.setId("id-secretaire");
+
+        when(userRepository.findById("id-secretaire")).thenReturn(Optional.of(secretaire));
+
+        assertThrows(DonneesInvalidesException.class,
+                () -> rendezVousService.creerRendezVous(req, "id-secretaire"));
 
         verify(rendezVousRepository, never()).save(any());
     }
