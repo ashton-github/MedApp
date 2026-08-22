@@ -60,7 +60,7 @@ public class AuthService {
         
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
-        return new LoginResult(accessToken , refreshToken , user.getRole());
+        return new LoginResult(user.getId() , accessToken , refreshToken , user.getRole() , user.getPrenom() , user.getNom());
     }
 
     public LoginResult refreshToken(String refreshToken) {
@@ -75,7 +75,7 @@ public class AuthService {
             throw new CompteDesactiveException();
         }
         String newAccessToken = jwtService.generateAccessToken(user);
-        return new LoginResult(newAccessToken , refreshToken , user.getRole()); //* */
+        return new LoginResult(user.getId() , newAccessToken , refreshToken , user.getRole() , user.getPrenom() , user.getNom()); //* */
     }
     
 }

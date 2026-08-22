@@ -97,24 +97,24 @@ public class AuthServiceTest {
 
     @Test
     void login_retournerToken_siIdentifiantsCorrects(){
-        //
-        String email= "medecin@medapp.com";
+        String email = "medecin@medapp.com";
         String password = "MotDePasse123!";
-        User user = new User(email , "hashedPassword123", "Dupont", "Jean", Role.MEDECIN , true , LocalDateTime.now() , null);
+        User user = new User(email, "hashedPassword123", "Dupont", "Jean", Role.MEDECIN, true, LocalDateTime.now(), null);
+        user.setId("user-id-1");
 
         when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(password, "hashedPassword123")).thenReturn(true);
         when(jwtService.generateAccessToken(user)).thenReturn("fake-jwt-token");
         when(jwtService.generateRefreshToken(user)).thenReturn("fake-refresh-token");
 
-        //
-        LoginResult result = authService.login(email , password);
+        LoginResult result = authService.login(email, password);
 
-
-        //then
+        assertEquals("user-id-1", result.userId());
         assertEquals("fake-jwt-token", result.accessToken());
         assertNotNull(result.refreshToken());
         assertEquals(Role.MEDECIN, result.role());
+        assertEquals("Jean", result.prenom());
+        assertEquals("Dupont", result.nom());
     }
 
     @Test
@@ -166,7 +166,7 @@ public class AuthServiceTest {
 
     @Test
     void refreshToken_retouneNouvelAccessToken_siRefreshTokenValide(){
-        User user = new User("medecin@medapp.com" , "hashedPassword123!", "Dupont", "Jean", Role.MEDECIN , true , LocalDateTime.now() , null);
+        User user = new User("medecin@medapp.com", "hashedPassword123!", "Dupont", "Jean", Role.MEDECIN, true, LocalDateTime.now(), null);
         user.setId("user-id-123");
         String refreshToken = "valid-refresh-token";
 
@@ -177,8 +177,11 @@ public class AuthServiceTest {
 
         LoginResult result = authService.refreshToken(refreshToken);
 
+        assertEquals("user-id-123", result.userId());
         assertEquals("nouveau-accesss-token", result.accessToken());
         assertEquals(refreshToken, result.refreshToken());
+        assertEquals("Jean", result.prenom());
+        assertEquals("Dupont", result.nom());
     }
 
     @Test 

@@ -61,7 +61,7 @@ public class AuthController {
                 .maxAge(Duration.ofDays(7))
                 .build();
 
-        LoginResponse response = new LoginResponse(result.accessToken(), result.role());
+        LoginResponse response = new LoginResponse(result.userId() , result.accessToken(), result.role() , result.prenom() , result.nom());
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
@@ -77,7 +77,7 @@ public class AuthController {
         }
 
         LoginResult result = authService.refreshToken(refreshToken);
-        LoginResponse response = new LoginResponse(result.accessToken(), result.role());
+        LoginResponse response = new LoginResponse(result.userId() , result.accessToken(), result.role() , result.prenom() , result.nom());
 
         ResponseCookie refreshedCookie = ResponseCookie.from("refresh_token", result.refreshToken())
                 .httpOnly(true)

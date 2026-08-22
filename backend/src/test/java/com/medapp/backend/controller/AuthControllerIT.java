@@ -114,8 +114,11 @@ public class AuthControllerIT {
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(TestDataFactory.unLoginRequest(email))))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").exists())
                 .andExpect(jsonPath("$.accessToken").exists())
                 .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andExpect(jsonPath("$.prenom").exists())
+                .andExpect(jsonPath("$.nom").exists())
                 .andExpect(cookie().exists("refresh_token"))
                 .andExpect(cookie().httpOnly("refresh_token", true));
     }
@@ -169,7 +172,10 @@ public class AuthControllerIT {
         mockMvc.perform(post("/api/auth/refresh-token")
                         .cookie(refreshCookie))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").exists())
                 .andExpect(jsonPath("$.accessToken").exists())
+                .andExpect(jsonPath("$.prenom").exists())
+                .andExpect(jsonPath("$.nom").exists())
                 .andExpect(header().string("Set-Cookie", Matchers.containsString("refresh_token=")))
                 .andExpect(header().string("Set-Cookie", Matchers.containsString("HttpOnly")));
     }

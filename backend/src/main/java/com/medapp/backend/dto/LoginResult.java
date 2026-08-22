@@ -4,6 +4,6 @@ import com.medapp.backend.model.Role;
 
 
 //utilisation interne 
-public record LoginResult(String accessToken ,String refreshToken ,  Role role) {
+public record LoginResult(String userId , String accessToken ,String refreshToken ,  Role role , String prenom , String nom) {
     
 }
