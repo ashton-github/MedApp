@@ -104,6 +104,19 @@ public class PatientControllerIT extends IntegrationTestBase {
     }
 
     @Test
+    void obtenirPatient_retourne404_siPatientAppartientAUnAutreMedecin() throws Exception {
+        String tokenMedecinA = obtenirAccessToken("medecin-a@medapp.com", Role.MEDECIN);
+        String tokenMedecinB = obtenirAccessToken("medecin-b@medapp.com", Role.MEDECIN);
+
+        PatientRequest request = TestDataFactory.unPatientRequest("1900512100099");
+        String patientId = creerPatientEtRecupererId(tokenMedecinA, request);
+
+        mockMvc.perform(get("/api/patients/" + patientId)
+                        .header("Authorization", "Bearer " + tokenMedecinB))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void obtenirPatient_retourne200_siPatientExiste() throws Exception {
         String token = obtenirAccessToken("medcin-detail@medapp.com", Role.MEDECIN);
 
@@ -141,30 +154,77 @@ public class PatientControllerIT extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.telephone").value("99999999"));
     }
+    @Test
+    void modifierPatient_retourne404_siMedecinNestPasLeReferent() throws Exception {
+        String tokenA = obtenirAccessToken("medecin-a-modif@medapp.com", Role.MEDECIN);
+        String tokenB = obtenirAccessToken("medecin-b-modif@medapp.com", Role.MEDECIN);
+
+        PatientRequest request = TestDataFactory.unPatientRequest("1900512100098");
+        String patientId = creerPatientEtRecupererId(tokenA, request);
+
+        PatientRequest requeteModifiee = TestDataFactory.unPatientRequestAvecTelephone("1900512100098", "99999999");
+
+        mockMvc.perform(put("/api/patients/" + patientId)
+                        .header("Authorization", "Bearer " + tokenB)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(requeteModifiee)))
+                .andExpect(status().isNotFound());
+        }
+
+        @Test
+    void modifierPatient_retourne403_siRoleSecretaire() throws Exception {
+        String tokenMedecin = obtenirAccessToken("medecin-owner-modif@medapp.com", Role.MEDECIN);
+        String tokenSecretaire = obtenirAccessToken("secretaire-modif-refuse@medapp.com", Role.SECRETAIRE);
+
+        PatientRequest request = TestDataFactory.unPatientRequest("1900512100096");
+        String patientId = creerPatientEtRecupererId(tokenMedecin, request);
+
+        PatientRequest requeteModifiee = TestDataFactory.unPatientRequestAvecTelephone("1900512100096", "99999999");
+
+        mockMvc.perform(put("/api/patients/" + patientId)
+                        .header("Authorization", "Bearer " + tokenSecretaire)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(requeteModifiee)))
+                .andExpect(status().isForbidden());
+        }
 
     @Test
-    void supprimerPatient_retourne204_siRoleSecretaire() throws Exception {
-        String tokenSecretaire = obtenirAccessToken("secretaire-suppr@medapp.com", Role.SECRETAIRE);
+    void supprimerPatient_retourne404_siMedecinNestPasLeReferent() throws Exception {
+        String tokenA = obtenirAccessToken("medecin-a-suppr@medapp.com", Role.MEDECIN);
+        String tokenB = obtenirAccessToken("medecin-b-suppr@medapp.com", Role.MEDECIN);
 
-        PatientRequest request = TestDataFactory.unPatientRequest("1900512100005");
-        String patientId = creerPatientEtRecupererId(tokenSecretaire, request);
+        PatientRequest request = TestDataFactory.unPatientRequest("1900512100097");
+        String patientId = creerPatientEtRecupererId(tokenA, request);
 
         mockMvc.perform(delete("/api/patients/" + patientId)
-                        .header("Authorization", "Bearer " + tokenSecretaire))
-                .andExpect(status().isNoContent());
-    }
+                        .header("Authorization", "Bearer " + tokenB))
+                .andExpect(status().isNotFound());
+        }
 
     @Test
-    void supprimerPatient_retourne403_siRoleNonSecretaire() throws Exception {
-        String tokenMedecin = obtenirAccessToken("medecin-suppr-refuse@medapp.com", Role.MEDECIN);
+     void supprimerPatient_retourne204_siMedecinEstLeReferent() throws Exception {
+        String tokenMedecin = obtenirAccessToken("medecin-suppr@medapp.com", Role.MEDECIN);
+
+        PatientRequest request = TestDataFactory.unPatientRequest("1900512100005");
+        String patientId = creerPatientEtRecupererId(tokenMedecin, request);
+
+        mockMvc.perform(delete("/api/patients/" + patientId)
+                        .header("Authorization", "Bearer " + tokenMedecin))
+                .andExpect(status().isNoContent());
+        }
+
+     @Test
+     void supprimerPatient_retourne403_siRoleSecretaire() throws Exception {
+        String tokenMedecin = obtenirAccessToken("medecin-owner-suppr@medapp.com", Role.MEDECIN);
+        String tokenSecretaire = obtenirAccessToken("secretaire-suppr-refuse@medapp.com", Role.SECRETAIRE);
 
         PatientRequest request = TestDataFactory.unPatientRequest("1900512100006");
         String patientId = creerPatientEtRecupererId(tokenMedecin, request);
 
         mockMvc.perform(delete("/api/patients/" + patientId)
-                        .header("Authorization", "Bearer " + tokenMedecin))
+                        .header("Authorization", "Bearer " + tokenSecretaire))
                 .andExpect(status().isForbidden());
-    }
+        }
 
     @Test
     void listerPatients_retourne200_avecPageDePatients() throws Exception {
@@ -184,6 +244,19 @@ public class PatientControllerIT extends IntegrationTestBase {
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].nom").exists());
     }
+
+    @Test
+    void listerPatients_neRetournePasPatientsDunAutreMedecin() throws Exception {
+        String tokenA = obtenirAccessToken("medecin-liste-a@medapp.com", Role.MEDECIN);
+        String tokenB = obtenirAccessToken("medecin-liste-b@medapp.com", Role.MEDECIN);
+
+        creerPatientEtRecupererId(tokenA, TestDataFactory.unPatientRequest("1900512100088"));
+
+        mockMvc.perform(get("/api/patients")
+                        .header("Authorization", "Bearer " + tokenB))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isEmpty());
+        }
 
     @Test
     void recherchePatients_retournePatientsCorrespondants() throws Exception {

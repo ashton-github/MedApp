@@ -49,7 +49,7 @@ public class PatientController {
         @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
         Patient patient = patientMapper.versEntite(request);
 
-        Patient patientCree = patientService.creerPatient(patient);
+        Patient patientCree = patientService.creerPatient(patient , utilisateur.id() , utilisateur.role());
 
         Patient patientMasque = patientService.appliquerMasquageSelonRole(patientCree,utilisateur.role());
 
@@ -64,7 +64,7 @@ public class PatientController {
     @GetMapping("/{id}")
     public ResponseEntity<PatientResponse> obtenirPatient(@PathVariable String id , 
         @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
-        Patient patient = patientService.obtenirPatient(id);
+        Patient patient = patientService.obtenirPatient(id , utilisateur.id() , utilisateur.role());
         
         Patient patientMasque = patientService.appliquerMasquageSelonRole(patient, utilisateur.role());
 
@@ -72,13 +72,14 @@ public class PatientController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('MEDECIN')")
     public ResponseEntity<PatientResponse> modifierPatient(@PathVariable String id,
          @Valid @RequestBody PatientRequest request , 
          @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
         
         Patient patientModifier =  patientMapper.versEntite(request);
 
-        Patient patientMisAJour = patientService.modifierPatient(id, patientModifier);
+        Patient patientMisAJour = patientService.modifierPatient(id, patientModifier , utilisateur.id());
 
         Patient patientMasque = patientService.appliquerMasquageSelonRole(patientMisAJour, utilisateur.role());
 
@@ -87,16 +88,18 @@ public class PatientController {
 
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SECRETAIRE')")
-    public ResponseEntity<Void> supprimerPatient(@PathVariable String id) {
-        patientService.supprimerPatient(id);
+    @PreAuthorize("hasRole('MEDECIN')")
+    public ResponseEntity<Void> supprimerPatient(@PathVariable String id,
+        @AuthenticationPrincipal UtilisateurAuthentifie utilisateur
+    ) {
+        patientService.supprimerPatient(id , utilisateur.id());
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping
     public ResponseEntity<Page<PatientResponse>> listerPatients(Pageable pageable ,
          @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
-        Page<Patient> patients = patientService.listerPatients(pageable);
+        Page<Patient> patients = patientService.listerPatients(pageable , utilisateur.id() , utilisateur.role());
 
         Page<PatientResponse> responses = patients.map(patient -> {
             Patient patientMasque = patientService.appliquerMasquageSelonRole(patient, utilisateur.role());
@@ -108,7 +111,7 @@ public class PatientController {
     @GetMapping("/search")
     public ResponseEntity<List<PatientResponse>> rechercherPatients(@RequestParam String query , 
         @AuthenticationPrincipal UtilisateurAuthentifie utilisateur){
-        List<Patient> patients = patientService.rechercherPatients(query);
+        List<Patient> patients = patientService.rechercherPatients(query , utilisateur.id() , utilisateur.role());
 
         List<PatientResponse> responses = patients.stream()
                 .map(patient -> patientMapper.versResponse(patientService.appliquerMasquageSelonRole(patient, utilisateur.role())))

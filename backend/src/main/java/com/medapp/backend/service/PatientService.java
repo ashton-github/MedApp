@@ -32,7 +32,7 @@ public class PatientService {
         this.userRepository = userRepository;
     }
     
-    public Patient creerPatient(Patient patient){
+    public Patient creerPatient(Patient patient , String medecinId , Role role){
 
         if(patient.getDateNaissance() != null && patient.getDateNaissance().isAfter(LocalDate.now())){
             throw new DonneesInvalidesException("La date de naissance ne peut pas etre dans le futur.");
@@ -40,31 +40,48 @@ public class PatientService {
         if(patientRepository.findByNumeroSecuriteSociale(patient.getNumeroSecuriteSociale()).isPresent()){
             throw new NumeroSecuriteSocialeDejaExistantException(patient.getNumeroSecuriteSociale());
         }
-        validerMedecinReferent(patient.getMedecinReferent());
+        if(role == Role.MEDECIN){
+            patient.setMedecinReferent((medecinId));
+        }else {
+            validerMedecinReferent(patient.getMedecinReferent());
+        }
         patient.setDateCreation(LocalDateTime.now());
         return patientRepository.save(patient);
     }
 
-    public List<Patient> rechercherPatients(String requete) {
-        List<Patient> parNom = patientRepository.findByNomContainingIgnoreCase(requete);
-        List<Patient> parPrenom = patientRepository.findByPrenomContainingIgnoreCase(requete);
+    public List<Patient> rechercherPatients(String requete, String medecinId, Role role) {
+        List<Patient> parNom;
+        List<Patient> parPrenom;
 
-        Map<String , Patient> resultats = new LinkedHashMap<>();
-        for(Patient patient:parNom){
-            resultats.put(patient.getId() , patient);
+        if (role == Role.MEDECIN) {
+            parNom = patientRepository.findByMedecinReferentAndNomContainingIgnoreCase(medecinId, requete);
+            parPrenom = patientRepository.findByMedecinReferentAndPrenomContainingIgnoreCase(medecinId, requete);
+        } else {
+            parNom = patientRepository.findByNomContainingIgnoreCase(requete);
+            parPrenom = patientRepository.findByPrenomContainingIgnoreCase(requete);
         }
-        for(Patient patient:parPrenom){
-            resultats.put(patient.getId() , patient);
+
+        Map<String, Patient> resultats = new LinkedHashMap<>();
+        for (Patient patient : parNom) {
+            resultats.put(patient.getId(), patient);
+        }
+        for (Patient patient : parPrenom) {
+            resultats.put(patient.getId(), patient);
         }
         return new ArrayList<>(resultats.values());
     }
 
-    public Patient obtenirPatient(String id){
+    public Patient obtenirPatient(String id , String medecinId , Role role){
+        if(role == Role.MEDECIN){
+            return patientRepository.findByIdAndMedecinReferent(id, medecinId)
+                .orElseThrow(() -> new PatientIntrouvableException(id));
+        }
         return patientRepository.findById(id).orElseThrow(() -> new PatientIntrouvableException(id));
     }
 
-    public Patient modifierPatient(String id , Patient patientModifie) {
-        Patient patientExistant = patientRepository.findById(id).orElseThrow(() -> new PatientIntrouvableException(id));
+    public Patient modifierPatient(String id , Patient patientModifie , String medecinId) {
+        Patient patientExistant = patientRepository.findByIdAndMedecinReferent(id, medecinId)
+            .orElseThrow(() -> new PatientIntrouvableException(id));
 
         String nouveauNumero = patientModifie.getNumeroSecuriteSociale();
         if(nouveauNumero != null && !nouveauNumero.equals(patientExistant.getNumeroSecuriteSociale())){
@@ -91,9 +108,9 @@ public class PatientService {
         
     }
 
-    public void supprimerPatient(String id) {
-        patientRepository.findById(id)
-                .orElseThrow(() -> new PatientIntrouvableException(id));
+    public void supprimerPatient(String id , String medecinId) {
+        patientRepository.findByIdAndMedecinReferent(id, medecinId)
+            .orElseThrow(() -> new PatientIntrouvableException(id));
         patientRepository.deleteById(id);
     }
 
@@ -109,7 +126,10 @@ public class PatientService {
         return patient;
     }
 
-    public Page<Patient> listerPatients(Pageable pageable){
+    public Page<Patient> listerPatients(Pageable pageable , String medecinId , Role role){
+        if(role == Role.MEDECIN){
+            return patientRepository.findByMedecinReferent(medecinId, pageable);
+        }
         return patientRepository.findAll(pageable);
     }
 
