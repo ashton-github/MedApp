@@ -45,6 +45,7 @@ public class PatientController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('MEDECIN', 'SECRETAIRE')")
     public ResponseEntity<PatientResponse> creePatient(@Valid @RequestBody PatientRequest request , 
         @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
         Patient patient = patientMapper.versEntite(request);
@@ -62,6 +63,7 @@ public class PatientController {
     
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MEDECIN', 'SECRETAIRE')")
     public ResponseEntity<PatientResponse> obtenirPatient(@PathVariable String id , 
         @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
         Patient patient = patientService.obtenirPatient(id , utilisateur.id() , utilisateur.role());
@@ -97,6 +99,7 @@ public class PatientController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('MEDECIN', 'SECRETAIRE')")
     public ResponseEntity<Page<PatientResponse>> listerPatients(Pageable pageable ,
          @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
         Page<Patient> patients = patientService.listerPatients(pageable , utilisateur.id() , utilisateur.role());
@@ -109,6 +112,7 @@ public class PatientController {
     }
 
     @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('MEDECIN', 'SECRETAIRE')")
     public ResponseEntity<List<PatientResponse>> rechercherPatients(@RequestParam String query , 
         @AuthenticationPrincipal UtilisateurAuthentifie utilisateur){
         List<Patient> patients = patientService.rechercherPatients(query , utilisateur.id() , utilisateur.role());
