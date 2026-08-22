@@ -140,6 +140,22 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
     }
 
     @Test
+    void creerOrdonnance_retourne403_siMedecinNestPasLeReferentDuPatient() throws Exception {
+        String tokenMedecin1 = obtenirAccessToken("medecin-ordo-non-referent-1@medapp.com", Role.MEDECIN);
+        String patientId = creerPatientEtRecupererId(tokenMedecin1, "8776876799");
+
+        String tokenMedecin2 = obtenirAccessToken("medecin-ordo-non-referent-2@medapp.com", Role.MEDECIN);
+
+        OrdonnanceRequest request = TestDataFactory.uneOrdonnanceRequest(patientId);
+
+        mockMvc.perform(post("/api/ordonnances")
+                        .header("Authorization", "Bearer " + tokenMedecin2)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void obtenirOrdonnance_retourne200_siExiste()throws Exception{
         String tokenMedecin = obtenirAccessToken("medecin-test@medapp.com", Role.MEDECIN);
         String patientId = creerPatientEtRecupererId(tokenMedecin, "8776876786");
@@ -152,6 +168,21 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(ordonnanceId))
                     .andExpect(jsonPath("$.patientId").value(patientId));
+    }
+
+    @Test
+    void obtenirOrdonnance_retourne403_siMedecinNestPasLeReferentDuPatient() throws Exception {
+        String tokenMedecin1 = obtenirAccessToken("medecin-ordo-lecture-1@medapp.com", Role.MEDECIN);
+        String patientId = creerPatientEtRecupererId(tokenMedecin1, "8776876798");
+
+        OrdonnanceRequest request = TestDataFactory.uneOrdonnanceRequest(patientId);
+        String ordonnanceId = creerOrdonnanceEtRecupererId(tokenMedecin1, request);
+
+        String tokenMedecin2 = obtenirAccessToken("medecin-ordo-lecture-2@medapp.com", Role.MEDECIN);
+
+        mockMvc.perform(get("/api/ordonnances/" + ordonnanceId)
+                        .header("Authorization", "Bearer " + tokenMedecin2))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -200,6 +231,22 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
                 .andExpect(jsonPath("$.statut").value("ARCHIVEE"));
 
     }
+
+    @Test
+    void obtenirHistorique_retourne403_siMedecinNestPasLeReferentDuPatient() throws Exception {
+        String tokenMedecin1 = obtenirAccessToken("medecin-ordo-hist-1@medapp.com", Role.MEDECIN);
+        String patientId = creerPatientEtRecupererId(tokenMedecin1, "8776876793");
+
+        OrdonnanceRequest request = TestDataFactory.uneOrdonnanceRequest(patientId);
+        creerOrdonnanceEtRecupererId(tokenMedecin1, request);
+
+        String tokenMedecin2 = obtenirAccessToken("medecin-ordo-hist-2@medapp.com", Role.MEDECIN);
+
+        mockMvc.perform(get("/api/ordonnances/patient/" + patientId)
+                        .header("Authorization", "Bearer " + tokenMedecin2))
+                .andExpect(status().isForbidden());
+    }
+
 
 
     @Test
@@ -269,6 +316,21 @@ public class OrdonnanceControllerIT extends IntegrationTestBase {
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_PDF));
 
+    }
+
+    @Test
+    void exporterOrdonnancePdf_retourne403_siMedecinNestPasLeReferentDuPatient() throws Exception {
+        String tokenMedecin1 = obtenirAccessToken("medecin-ordo-pdf-1@medapp.com", Role.MEDECIN);
+        String patientId = creerPatientEtRecupererId(tokenMedecin1, "8776876794");
+
+        OrdonnanceRequest request = TestDataFactory.uneOrdonnanceRequest(patientId);
+        String ordonnanceId = creerOrdonnanceEtRecupererId(tokenMedecin1, request);
+
+        String tokenMedecin2 = obtenirAccessToken("medecin-ordo-pdf-2@medapp.com", Role.MEDECIN);
+
+        mockMvc.perform(get("/api/ordonnances/" + ordonnanceId + "/pdf")
+                        .header("Authorization", "Bearer " + tokenMedecin2))
+                .andExpect(status().isForbidden());
     }
 
 }

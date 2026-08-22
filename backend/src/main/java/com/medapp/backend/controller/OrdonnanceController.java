@@ -46,37 +46,42 @@ public class OrdonnanceController {
     }
 
 
-    @PostMapping
+   @PostMapping
     @PreAuthorize("hasRole('MEDECIN')")
     public ResponseEntity<OrdonnanceResponse> creerOrdonnance(
         @Valid @RequestBody OrdonnanceRequest ordonnanceRequest,
         @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
 
-        Ordonnance ordonnance = ordonnanceMapper.versEntite(ordonnanceRequest , utilisateur.id());
-        Ordonnance ordonnanceCreee = ordonnanceService.creerOrdonnance(ordonnance);
+        Ordonnance ordonnance = ordonnanceMapper.versEntite(ordonnanceRequest, utilisateur.id());
+        Ordonnance ordonnanceCreee = ordonnanceService.creerOrdonnance(ordonnance, utilisateur.id());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ordonnanceMapper.versResponse(ordonnanceCreee));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<OrdonnanceResponse> obtenirOrdonnance( @PathVariable String id) {
-        Ordonnance ordonnance = ordonnanceService.obtenirOrdonnance(id);
+    @PreAuthorize("hasRole('MEDECIN')")
+    public ResponseEntity<OrdonnanceResponse> obtenirOrdonnance( @PathVariable String id,
+        @AuthenticationPrincipal UtilisateurAuthentifie utilisateur
+    ) {
+        Ordonnance ordonnance = ordonnanceService.obtenirOrdonnance(id , utilisateur.id() );
 
         return ResponseEntity.status(HttpStatus.OK).body(ordonnanceMapper.versResponse(ordonnance));
     }
 
     @GetMapping("/patient/{patientId}")
+    @PreAuthorize("hasRole('MEDECIN')")
     public ResponseEntity<List<OrdonnanceResponse>> obtenirHistorique(
         @PathVariable String patientId,
-        @RequestParam (required = false) StatutOrdonnance statut) {
-        
-            List<Ordonnance> ordonnances = ordonnanceService.obtenirHistorique(patientId, statut);
+        @RequestParam(required = false) StatutOrdonnance statut,
+        @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
 
-            List<OrdonnanceResponse> response = ordonnances.stream()
-                .map(ordonnanceMapper::versResponse)
-                .toList();
+        List<Ordonnance> ordonnances = ordonnanceService.obtenirHistorique(patientId, statut, utilisateur.id());
 
-            return ResponseEntity.ok(response);
+        List<OrdonnanceResponse> response = ordonnances.stream()
+            .map(ordonnanceMapper::versResponse)
+            .toList();
+
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{id}/archiver")
@@ -102,8 +107,10 @@ public class OrdonnanceController {
 
 
     @GetMapping("/{id}/pdf")
-    public ResponseEntity<byte[]> exporterOrdonnancePdf(@PathVariable String id) {
-        byte[] pdf = ordonnanceService.generatePdf(id);
+    @PreAuthorize("hasRole('MEDECIN')")
+    public ResponseEntity<byte[]> exporterOrdonnancePdf(@PathVariable String id,
+            @AuthenticationPrincipal UtilisateurAuthentifie utilisateur) {
+        byte[] pdf = ordonnanceService.generatePdf(id, utilisateur.id());
 
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_PDF)

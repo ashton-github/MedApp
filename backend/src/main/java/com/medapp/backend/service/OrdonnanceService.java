@@ -14,6 +14,7 @@ import com.medapp.backend.exception.OrdonnanceIntrouvableException;
 import com.medapp.backend.exception.PatientIntrouvableException;
 import com.medapp.backend.model.Medicament;
 import com.medapp.backend.model.Ordonnance;
+import com.medapp.backend.model.Patient;
 import com.medapp.backend.model.StatutOrdonnance;
 import com.medapp.backend.repository.OrdonnanceRepository;
 import com.medapp.backend.repository.PatientRepository;
@@ -34,24 +35,22 @@ public class OrdonnanceService {
         this.patientRepository = patientRepository;
     }
 
-    public Ordonnance creerOrdonnance(Ordonnance ordonnance){
-        patientRepository.findById(ordonnance.getPatientId()).orElseThrow(
-            () -> new PatientIntrouvableException(ordonnance.getPatientId())
-        );
+    public Ordonnance creerOrdonnance(Ordonnance ordonnance, String medecinConnecte){
+        Patient patient = patientRepository.findById(ordonnance.getPatientId())
+            .orElseThrow(() -> new PatientIntrouvableException(ordonnance.getPatientId()));
+
+        verifierAccesMedecin(patient, medecinConnecte);
 
         ordonnance.setDateEmission(LocalDate.now());
-
         ordonnance.setStatut(StatutOrdonnanceCalculator.calculer(ordonnance.getDateValidite(), ordonnance.getStatut()));
         return ordonnanceRepository.save(ordonnance);
     }
 
-    public Ordonnance archiverOrdonnance(String ordonnanceId , String medecinConnected) {
+    public Ordonnance archiverOrdonnance(String ordonnanceId, String medecinConnected) {
         Ordonnance ordonnance = ordonnanceRepository.findById(ordonnanceId)
                     .orElseThrow(() -> new OrdonnanceIntrouvableException(ordonnanceId));
 
-        if(!ordonnance.getMedecinId().equals(medecinConnected)){
-            throw new AccesRefuseException("Seul le medecin prescripteur peut archiver cette ordonnance.");
-        }
+        verifierAccesMedecin(ordonnance, medecinConnected);
 
         if(ordonnance.getStatut() == StatutOrdonnance.ARCHIVEE){
             throw new OrdonnanceDejaArchiveeException("Cette ordonnance est deja archivee.");
@@ -59,32 +58,47 @@ public class OrdonnanceService {
 
         ordonnance.setStatut(StatutOrdonnance.ARCHIVEE);
         return ordonnanceRepository.save(ordonnance);
-
-        
     }
 
-    public List<Ordonnance> obtenirHistorique(String patientId , StatutOrdonnance statut) {
-        patientRepository.findById(patientId)
+    public List<Ordonnance> obtenirHistorique(String patientId, StatutOrdonnance statut, String medecinConnecte) {
+        Patient patient = patientRepository.findById(patientId)
             .orElseThrow(() -> new PatientIntrouvableException(patientId));
-            
+
+        verifierAccesMedecin(patient, medecinConnecte);
+
         List<Ordonnance> ordonnances = (statut != null)
-        ? ordonnanceRepository.findByPatientIdAndStatut(patientId, statut)
-        : ordonnanceRepository.findByPatientId(patientId);
+            ? ordonnanceRepository.findByPatientIdAndStatut(patientId, statut)
+            : ordonnanceRepository.findByPatientId(patientId);
 
         return ordonnances.stream()
             .map(this::synchroniserStatut)
             .sorted(Comparator.comparing(Ordonnance::getDateEmission).reversed()
                 .thenComparing(Ordonnance::getId))
             .toList();
-        }
+    }
 
-    public Ordonnance obtenirOrdonnance(String id ) {
-    
+    public Ordonnance obtenirOrdonnance(String id, String medecinConnecte) {
         Ordonnance ordonnance = ordonnanceRepository.findById(id)
             .orElseThrow(() -> new OrdonnanceIntrouvableException(id));
 
+        verifierAccesMedecin(ordonnance, medecinConnecte);
 
         return synchroniserStatut(ordonnance);
+    }
+
+    private void verifierAccesMedecin(Ordonnance ordonnance, String medecinConnecte) {
+        Patient patient = patientRepository.findById(ordonnance.getPatientId())
+            .orElseThrow(() -> new PatientIntrouvableException(ordonnance.getPatientId()));
+
+        if (!medecinConnecte.equals(patient.getMedecinReferent())) {
+            throw new AccesRefuseException("Seul le medecin referent du patient peut acceder a cette ordonnance.");
+        }
+    }
+
+    private void verifierAccesMedecin(Patient patient, String medecinConnecte) {
+        if (!medecinConnecte.equals(patient.getMedecinReferent())) {
+            throw new AccesRefuseException("Seul le medecin referent du patient peut acceder a cette ressource.");
+        }
     }
 
     private Ordonnance synchroniserStatut(Ordonnance ordonnance){
@@ -102,11 +116,7 @@ public class OrdonnanceService {
         Ordonnance ordonnance = ordonnanceRepository.findById(ordonnanceId)
                     .orElseThrow(() -> new OrdonnanceIntrouvableException(ordonnanceId));
 
-        if(!ordonnance.getMedecinId().equals(medecinId)){
-            throw new AccesRefuseException(
-                "Seul le medecin prescripteur peut modifier cette ordonnance"
-            );
-        }
+        verifierAccesMedecin(ordonnance, medecinId);
 
         if(ordonnance.getStatut() == StatutOrdonnance.ARCHIVEE){
             throw new OrdonnanceDejaArchiveeException(
@@ -121,12 +131,16 @@ public class OrdonnanceService {
         ordonnance.setStatut(StatutOrdonnanceCalculator.calculer(ordonnanceModifiee.getDateValidite(), ordonnanceModifiee.getStatut()));
 
         return ordonnanceRepository.save(ordonnance);
-
     }
 
-    public byte[] generatePdf(String id) {
+    
+
+    public byte[] generatePdf(String id , String medecinConnecte) {
         Ordonnance ordonnance = ordonnanceRepository.findById(id)
             .orElseThrow(() -> new OrdonnanceIntrouvableException(id));
+
+
+        verifierAccesMedecin(ordonnance, medecinConnecte);
 
         try{
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
